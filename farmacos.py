@@ -22,7 +22,7 @@ except ImportError:
     print("mplcursors no está instalado. Usando tooltips alternativos...")
     MPLCURSORS_AVAILABLE = False
 
-df = pd.read_csv(r"C:\Users\edjom\OneDrive\Escritorio\TherapeuticDataCommons\DDIBUENO.csv")
+df = pd.read_csv(r"DDIBUENO.csv")
 
 # ATC Categories with descriptions
 ATC_CATEGORIES = {
@@ -686,4 +686,5 @@ if __name__ == "__main__":
         print("To install: pip install mplcursors")
     
     # Usar la versión con tooltips
+
     visualizar_grafo_con_tooltips(df, target_drug)
