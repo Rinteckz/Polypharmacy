@@ -1,60 +1,28 @@
-import streamlit as st
 import networkx as nx
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from collections import Counter
 import numpy as np
 import pandas as pd
-import io
-import base64
+import threading
+def auto_remove_annotation(annotation, canvas, delay=3):
+    def _remove():
+        try:
+            annotation.remove()
+            canvas.draw_idle()
+        except Exception:
+            pass
+    threading.Timer(delay, _remove).start()
 
-# Configurar la página
-st.set_page_config(
-    page_title="Drug Interaction Network",
-    page_icon="💊",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+try:
+    import mplcursors
+    MPLCURSORS_AVAILABLE = True
+except ImportError:
+    print("mplcursors no está instalado. Usando tooltips alternativos...")
+    MPLCURSORS_AVAILABLE = False
 
-# CSS personalizado
-st.markdown("""
-<style>
-    .main {
-        padding: 2rem;
-    }
-    .stButton>button {
-        width: 100%;
-    }
-    .drug-title {
-        color: #1E88E5;
-        font-size: 2rem;
-        margin-bottom: 1rem;
-    }
-    .info-box {
-        background-color: #f0f2f6;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        margin: 1rem 0;
-    }
-    .category-tag {
-        display: inline-block;
-        padding: 3px 10px;
-        margin: 2px;
-        border-radius: 15px;
-        font-size: 12px;
-        font-weight: 500;
-    }
-    .stCheckbox > div {
-        margin-bottom: 0.5rem;
-    }
-</style>
-""", unsafe_allow_html=True)
+df = pd.read_csv(r"C:\Users\edjom\OneDrive\Escritorio\TherapeuticDataCommons\DDIBUENO.csv")
 
-# Título principal
-st.title("💊 Drug Interaction Network Explorer")
-st.markdown("---")
-
-# ATC Categories with descriptions (igual que tu código)
 ATC_CATEGORIES = {
     'A': 'Alimentary tract',
     'B': 'Blood organs',
@@ -74,7 +42,7 @@ ATC_CATEGORIES = {
     'Multi ATC': 'Multi ATC'
 }
 
-# Colors for each ATC category (igual que tu código)
+# Colors for each ATC category
 ATC_COLORS = {
     'A': '#FF6B35',
     'B': '#004E89',
@@ -95,7 +63,6 @@ ATC_COLORS = {
 }
 
 def get_atc_color_and_category(atc_code, num_atc):
-    """Exactamente igual que tu código original"""
     if num_atc == 0:
         return ATC_COLORS['Sin ATC'], 'Sin ATC'
     
@@ -114,7 +81,7 @@ def get_atc_color_and_category(atc_code, num_atc):
     return ATC_COLORS.get(first_char, '#CCCCCC'), ATC_CATEGORIES.get(first_char, 'Unknown')
 
 def crear_grafo_con_informacion(df, farmaco_objetivo=None):
-    """Versión adaptada para Streamlit"""
+    """Versión con información adicional para tooltips"""
     G = nx.DiGraph()
     
     for _, row in df.iterrows():
@@ -131,22 +98,30 @@ def crear_grafo_con_informacion(df, farmaco_objetivo=None):
         color2, category2 = get_atc_color_and_category(atc2, num_atc2)
         
         if not G.has_node(drug1):
+            # Información detallada para tooltips
+            tooltip_info = f"Drug: {drug1}\nATC Code: {atc1}\nATC Category: {category1}"
             G.add_node(drug1, 
                       atc_code=atc1,
                       atc_category=category1,
                       color=color1,
-                      num_atc=num_atc1)
+                      num_atc=num_atc1,
+                      tooltip=tooltip_info)
         
         if not G.has_node(drug2):
+            tooltip_info = f"Drug: {drug2}\nATC Code: {atc2}\nATC Category: {category2}"
             G.add_node(drug2, 
                       atc_code=atc2,
                       atc_category=category2,
                       color=color2,
-                      num_atc=num_atc2)
+                      num_atc=num_atc2,
+                      tooltip=tooltip_info)
         
+        # Solo agregar arista si no existe, con información de tooltip
         if not G.has_edge(drug1, drug2):
+            edge_tooltip = f"Interaction Type: {interaction_type}\nFrom: {drug1} → To: {drug2}"
             G.add_edge(drug1, drug2, 
-                      interaction_type=interaction_type)
+                      interaction_type=interaction_type,
+                      tooltip=edge_tooltip)
     
     if farmaco_objetivo:
         farmaco_encontrado = None
@@ -161,337 +136,514 @@ def crear_grafo_con_informacion(df, farmaco_objetivo=None):
             subgraph_nodes = [farmaco_encontrado] + predecessors + successors
             G = G.subgraph(subgraph_nodes).copy()
         else:
-            st.warning(f"Drug '{farmaco_objetivo}' not found in the data")
+            print(f"Drug '{farmaco_objetivo}' not found in the data")
             return None
     
     return G
 
-def generar_visualizacion_streamlit(df, farmaco_objetivo=None, selected_categories=None):
-    """Versión Streamlit de tu visualización"""
+def visualizar_grafo_con_tooltips(df, farmaco_objetivo=None, figsize=(16, 10)):
+    """Visualización con tooltips interactivos para nodos y aristas"""
     
-    # Crear grafo
+    # Crear grafo con información para tooltips
     G = crear_grafo_con_informacion(df, farmaco_objetivo)
     
     if G is None:
-        return None, None
+        return
     
-    # Filtrar por categorías si hay selección
-    if selected_categories:
-        nodes_to_keep = []
+    # Encontrar fármaco principal
+    farmaco_principal = None
+    if farmaco_objetivo:
         for node in G.nodes():
-            if node == farmaco_objetivo:
-                nodes_to_keep.append(node)
+            if farmaco_objetivo.lower() in node.lower():
+                farmaco_principal = node
+                break
+    
+    all_categories = set()
+    for node in G.nodes():
+        if node != farmaco_principal:  # No filtrar el fármaco principal
+            all_categories.add(G.nodes[node]['atc_category'])
+    
+    category_list = sorted(list(all_categories))
+    
+    fig = plt.figure(figsize=figsize)
+    
+    gs = plt.GridSpec(1, 5, figure=fig, width_ratios=[4, 0.1, 1, 0.1, 1])
+    
+    ax_graph = fig.add_subplot(gs[0, 0])
+    
+    ax_checkboxes = fig.add_subplot(gs[0, 2])
+    ax_checkboxes.axis('off')
+    
+    ax_controls = fig.add_subplot(gs[0, 4])
+    ax_controls.axis('off')
+    
+    active_categories = {cat: False for cat in category_list}
+    
+    global node_positions, edge_info_list
+    
+    def filtrar_por_categorias():
+        nodes_to_keep = [farmaco_principal] if farmaco_principal else []
+        
+        for node in G.nodes():
+            if node == farmaco_principal:
                 continue
             
-            node_category = G.nodes[node]['atc_category']
-            if node_category in selected_categories:
+            category = G.nodes[node]['atc_category']
+            if active_categories.get(category, False):  # Solo si está seleccionada
                 nodes_to_keep.append(node)
         
-        G = G.subgraph(nodes_to_keep).copy()
-    
-    if len(G.nodes()) == 0:
-        return None, None
-    
-    # Crear figura
-    fig, ax = plt.subplots(figsize=(14, 10))
-    
-    # Layout
-    farmaco_principal = farmaco_objetivo
-    if farmaco_principal and farmaco_principal in G.nodes():
-        pos = {}
-        pos[farmaco_principal] = np.array([0, 0])
+        G_filtered = G.subgraph(nodes_to_keep).copy()
         
-        neighbors = list(G.predecessors(farmaco_principal)) + \
-                   list(G.successors(farmaco_principal))
-        neighbors = list(set(neighbors))
+        edges_to_keep = []
+        for u, v in G.edges():
+            if u in nodes_to_keep and v in nodes_to_keep:
+                edges_to_keep.append((u, v))
         
-        n_neighbors = len(neighbors)
-        if n_neighbors > 0:
-            radius = 1.5 + 0.2 * min(n_neighbors, 20)
-            angle_step = 2 * np.pi / n_neighbors
+        G_final = nx.DiGraph()
+        for node in nodes_to_keep:
+            G_final.add_node(node, **G.nodes[node])
+        
+        for u, v in edges_to_keep:
+            G_final.add_edge(u, v, **G[u][v])
+        
+        return G_final
+    
+    # Función para dibujar el grafo
+    def dibujar_grafo():
+        ax_graph.clear()
+        
+        # Filtrar grafo
+        G_filtered = filtrar_por_categorias()
+        
+        if len(G_filtered.nodes()) == 0:
+            ax_graph.text(0.5, 0.5, "No drugs to display\nSelect categories on the right", 
+                         ha='center', va='center', fontsize=12)
+            ax_graph.axis('off')
+            return
+        
+        # Crear layout
+        if farmaco_principal and farmaco_principal in G_filtered.nodes():
+            # Layout centrado en fármaco principal
+            pos = {}
+            pos[farmaco_principal] = np.array([0, 0])
             
-            for i, neighbor in enumerate(neighbors):
-                angle = i * angle_step
-                x = radius * np.cos(angle)
-                y = radius * np.sin(angle)
-                pos[neighbor] = np.array([x, y])
-    else:
-        pos = nx.spring_layout(G, k=2/np.sqrt(len(G.nodes())), 
-                              iterations=50, seed=42)
-    
-    # Preparar datos para visualización
-    node_colors = []
-    node_sizes = []
-    
-    for node in G.nodes():
-        node_colors.append(G.nodes[node]['color'])
-        if farmaco_principal and node == farmaco_principal:
-            node_sizes.append(1200)
+            neighbors = list(G_filtered.predecessors(farmaco_principal)) + \
+                       list(G_filtered.successors(farmaco_principal))
+            neighbors = list(set(neighbors))  # Eliminar duplicados
+            
+            n_neighbors = len(neighbors)
+            if n_neighbors > 0:
+                radius = 1.5 + 0.2 * min(n_neighbors, 20)  # Limitar radio
+                angle_step = 2 * np.pi / n_neighbors
+                
+                for i, neighbor in enumerate(neighbors):
+                    angle = i * angle_step
+                    x = radius * np.cos(angle)
+                    y = radius * np.sin(angle)
+                    pos[neighbor] = np.array([x, y])
         else:
-            node_sizes.append(600)
-    
-    # Dibujar nodos
-    nx.draw_networkx_nodes(G, pos, 
-                          node_color=node_colors,
-                          node_size=node_sizes,
-                          alpha=0.9,
-                          edgecolors='black',
-                          linewidths=1,
-                          ax=ax)
-    
-    # Dibujar aristas
-    edge_colors = []
-    for u, v, data in G.edges(data=True):
-        edge_colors.append('gray')
-    
-    nx.draw_networkx_edges(G, pos,
-                          width=1.5,
-                          alpha=0.6,
-                          edge_color=edge_colors,
-                          arrows=True,
-                          arrowsize=10,
-                          arrowstyle='-|>',
-                          node_size=node_sizes,
-                          ax=ax)
-    
-    # Etiquetas
-    labels = {}
-    for node in G.nodes():
-        if farmaco_principal and node == farmaco_principal:
-            labels[node] = node
-        else:
-            if len(node) > 20:
-                labels[node] = node[:17] + "..."
+            # Layout spring para grafo completo
+            pos = nx.spring_layout(G_filtered, k=2/np.sqrt(len(G_filtered.nodes())), 
+                                  iterations=50, seed=42)
+        
+        # Guardar posiciones para tooltips
+        global node_positions
+        node_positions = pos
+        
+        # Preparar datos para visualización
+        node_colors = []
+        node_sizes = []
+        
+        for node in G_filtered.nodes():
+            node_colors.append(G_filtered.nodes[node]['color'])
+            
+            # Tamaño diferente para fármaco principal
+            if farmaco_principal and node == farmaco_principal:
+                node_sizes.append(1200)
             else:
-                labels[node] = node
-    
-    nx.draw_networkx_labels(
-        G,
-        pos,
-        labels,
-        font_size=8,
-        font_weight='normal',
-        bbox=dict(
-            facecolor='white',
-            edgecolor='none',
-            alpha=0.6
-        ),
-        ax=ax
-    )
-    
-    # Título y estadísticas
-    stats_text = (f"Drugs: {len(G.nodes())} | Interactions: {len(G.edges())}")
-    
-    if farmaco_principal:
-        title = f"Drug: {farmaco_principal}\n{stats_text}"
-    else:
-        title = f"Complete Network\n{stats_text}"
-    
-    ax.set_title(title, fontsize=14, pad=20)
-    ax.axis('off')
-    
-    plt.tight_layout()
-    
-    # Información para tooltips (simulada con Streamlit)
-    info_data = {
-        'nodes': {},
-        'edges': []
-    }
-    
-    for node in G.nodes():
-        info_data['nodes'][node] = {
-            'atc_code': G.nodes[node]['atc_code'],
-            'atc_category': G.nodes[node]['atc_category'],
-            'color': G.nodes[node]['color']
-        }
-    
-    for u, v, data in G.edges(data=True):
-        info_data['edges'].append({
-            'from': u,
-            'to': v,
-            'y_value': data.get('interaction_type', 'Unknown')
-        })
-    
-    return fig, info_data
+                node_sizes.append(600)
+        
+        # Dibujar nodos
+        nodes_collection = nx.draw_networkx_nodes(G_filtered, pos, 
+                                      node_color=node_colors,
+                                      node_size=node_sizes,
+                                      alpha=0.9,
+                                      edgecolors='black',
+                                      linewidths=1,
+                                      ax=ax_graph)
+        
+        global edge_info_list
+        edge_info_list = []
+        edge_colors = []
+        
+        for u, v, data in G_filtered.edges(data=True):
+            
+            edge_colors.append('gray')
+            
+            edge_info_list.append({
+                'u': u, 
+                'v': v, 
+                'data': data,
+                'color': edge_colors[-1]
+            })
+        
+        # Dibujar aristas - IMPORTANTE: dibujar todas juntas
+        edges_collection = nx.draw_networkx_edges(G_filtered, pos,
+                                      width=1.5,
+                                      alpha=0.6,
+                                      edge_color=edge_colors,
+                                      arrows=True,
+                                      arrowsize=10,
+                                      arrowstyle='-|>',
+                                      node_size=node_sizes,
+                                      ax=ax_graph)
+        
+        # Dibujar etiquetas de nodos (nombres siempre visibles)
+        labels = {}
+        for node in G_filtered.nodes():
+            if farmaco_principal and node == farmaco_principal:
+                labels[node] = node  # nombre completo
+            else:
+                # acortar nombres largos
+                if len(node) > 20:
+                    labels[node] = node[:17] + "..."
+                else:
+                    labels[node] = node
 
-# Función principal de la app
-def main():
-    # Sidebar - Controles (lado izquierdo)
-    with st.sidebar:
-        st.header("⚙️ Configuration")
-        
-        # Cargar datos
-        @st.cache_data
-        def load_data():
-            try:
-                df = pd.read_csv("DDIBUENO.csv")
-                return df
-            except Exception as e:
-                st.error(f"Error loading CSV: {e}")
-                return None
-        
-        df = load_data()
-        
-        if df is None:
-            st.stop()
-        
-        # Obtener lista de fármacos
-        all_drugs = sorted(set(list(df['Common_name_x'].unique()) + 
-                              list(df['Common_name_y'].unique())))
-        
-        # Selectbox para fármaco objetivo
-        target_drug = st.selectbox(
-            "Select Target Drug",
-            options=["(Show all)"] + all_drugs,
-            index=0,
-            help="Choose a drug to analyze its interactions"
+        nx.draw_networkx_labels(
+            G_filtered,
+            pos,
+            labels,
+            font_size=6,              # más pequeño
+            font_weight='normal',
+            bbox=dict(                
+                facecolor='white',
+                edgecolor='none',
+                alpha=0.6
+            ),
+            ax=ax_graph
         )
         
-        st.markdown("---")
-        st.header("🎨 Filter by ATC Category")
+        # Información de estadísticas
+        stats_text = (f"Drugs: {len(G_filtered.nodes())} | "
+                     f"Interactions: {len(G_filtered.edges())}")
         
-        # Obtener todas las categorías presentes
-        all_categories = set()
-        for _, row in df.iterrows():
-            for suffix in ['x', 'y']:
-                atc_code = row[f'atc_code_{suffix}']
-                num_atc = row[f'num_atc_{suffix}']
-                color, category = get_atc_color_and_category(atc_code, num_atc)
-                all_categories.add(category)
-        
-        category_list = sorted(list(all_categories))
-        
-        # Checkboxes para categorías
-        selected_categories = []
-        for category in category_list:
-            if st.checkbox(f"{category}", value=True, key=f"cat_{category}"):
-                selected_categories.append(category)
-        
-        st.markdown("---")
-        
-        # Botones de acción
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("Select All", use_container_width=True):
-                for category in category_list:
-                    st.session_state[f"cat_{category}"] = True
-                st.rerun()
-        
-        with col2:
-            if st.button("Deselect All", use_container_width=True):
-                for category in category_list:
-                    st.session_state[f"cat_{category}"] = False
-                st.rerun()
-        
-        st.markdown("---")
-        
-        # Leyenda de colores
-        st.header("🌈 Color Legend")
-        for category, color in ATC_COLORS.items():
-            if category in ['Sin ATC', 'Multi ATC'] or category in ATC_CATEGORIES:
-                st.markdown(f"""
-                <div style='display: flex; align-items: center; margin-bottom: 5px;'>
-                    <div style='width: 20px; height: 20px; background-color: {color}; 
-                         margin-right: 10px; border: 1px solid #ddd; border-radius: 4px;'></div>
-                    <span>{category}</span>
-                </div>
-                """, unsafe_allow_html=True)
-    
-    # Contenido principal
-    if df is not None:
-        # Preparar parámetros
-        farmaco_param = None if target_drug == "(Show all)" else target_drug
-        
-        # Generar visualización
-        with st.spinner("Generating network visualization..."):
-            fig, info_data = generar_visualizacion_streamlit(
-                df, 
-                farmaco_param, 
-                selected_categories
-            )
-        
-        if fig is not None:
-            # Mostrar gráfico
-            st.pyplot(fig)
-            
-            # Estadísticas
-            col1, col2, col3 = st.columns(3)
-            
-            if info_data and 'nodes' in info_data:
-                with col1:
-                    st.metric("Total Drugs", len(info_data['nodes']))
-                
-                with col2:
-                    st.metric("Total Interactions", 
-                             len(info_data['edges']) if 'edges' in info_data else 0)
-                
-                with col3:
-                    if farmaco_param:
-                        st.metric("Target Drug", farmaco_param)
-                    else:
-                        st.metric("Network Type", "Complete")
-            
-            # Información detallada
-            st.markdown("---")
-            st.subheader("🔍 Detailed Information")
-            
-            # Pestañas para nodos y aristas
-            tab1, tab2 = st.tabs(["📋 Drugs Information", "🔗 Interactions"])
-            
-            with tab1:
-                if info_data and 'nodes' in info_data:
-                    st.dataframe(
-                        pd.DataFrame.from_dict(info_data['nodes'], orient='index')
-                        .reset_index()
-                        .rename(columns={'index': 'Drug Name'}),
-                        use_container_width=True,
-                        height=300
-                    )
-            
-            with tab2:
-                if info_data and 'edges' in info_data:
-                    edges_df = pd.DataFrame(info_data['edges'])
-                    st.dataframe(
-                        edges_df,
-                        use_container_width=True,
-                        height=300
-                    )
-                    
-                    # Mostrar valor Y de las interacciones
-                    if 'y_value' in edges_df.columns:
-                        st.subheader("Interaction Types (Y values)")
-                        y_counts = edges_df['y_value'].value_counts()
-                        st.bar_chart(y_counts)
+        if farmaco_principal:
+            title = f"Drug: {farmaco_principal}\n{stats_text}"
+
         else:
-            st.warning("No data to display with current filters. Try selecting different categories.")
+            title = f"Complete Network\n{stats_text}"
         
-        # Footer
-        st.markdown("---")
-        st.caption("""
-        **Interactive Features:**
-        - Hover over the graph to see details
-        - Click checkboxes to filter by ATC category
-        - Select a target drug to focus on specific interactions
-        """)
+        ax_graph.set_title(title, fontsize=12, pad=20,y=0.9)
+        ax_graph.axis('off')
         
-        # Información del dataset
-        with st.expander("📊 Dataset Information"):
-            st.write(f"**Total records:** {len(df)}")
-            st.write(f"**Unique drugs:** {len(all_drugs)}")
+        # Configurar tooltips
+        if MPLCURSORS_AVAILABLE:
+            configurar_tooltips_mplcursors(G_filtered, nodes_collection, edges_collection)
+        else:
+            configurar_tooltips_alternativos(G_filtered, pos, nodes_collection, edges_collection)
+        
+        return G_filtered
+    
+    # Función para configurar tooltips con mplcursors (si está disponible)
+    def configurar_tooltips_mplcursors(G_filtered, nodes_collection, edges_collection):
+        try:
             
-            # Contar categorías
-            category_counts = Counter()
-            for _, row in df.iterrows():
-                for suffix in ['x', 'y']:
-                    atc_code = row[f'atc_code_{suffix}']
-                    num_atc = row[f'num_atc_{suffix}']
-                    color, category = get_atc_color_and_category(atc_code, num_atc)
-                    category_counts[category] += 1
+            # Configurar tooltips para nodos
+            cursor_nodes = mplcursors.cursor(nodes_collection, hover=True)
             
-            st.write("**Drugs by ATC Category:**")
-            for category, count in sorted(category_counts.items()):
-                st.write(f"  - {category}: {count}")
 
+            @cursor_nodes.connect("add")
+            def on_add_node(sel):
+                node_idx = sel.index
+                nodes_list = list(G_filtered.nodes())
+                if node_idx < len(nodes_list):
+                    node_name = nodes_list[node_idx]
+                    node_data = G_filtered.nodes[node_name]
+                    
+                    tooltip_text = (f"DRUG INFORMATION\n"
+                                  f"Name: {node_name}\n"
+                                  f"ATC Code: {node_data['atc_code']}\n"
+                                  f"ATC Category: {node_data['atc_category']}")
+                    
+                    sel.annotation.set_text(tooltip_text)
+                    sel.annotation.set_bbox(dict(
+                        boxstyle="round,pad=0.5",
+                        facecolor="lightyellow",
+                        alpha=0.95,
+                        edgecolor="orange"
+                    ))
+                    sel.annotation.set_fontsize(9)
+                    auto_remove_annotation(sel.annotation, sel.annotation.figure.canvas, delay=5)
+
+            
+            # Configurar tooltips para aristas
+            cursor_edges = mplcursors.cursor(edges_collection, hover=True)
+            
+            @cursor_edges.connect("add")
+            def on_add_edge(sel):
+                edge_idx = sel.index
+                if edge_idx < len(edge_info_list):
+                    edge_info = edge_info_list[edge_idx]
+                    u = edge_info['u']
+                    v = edge_info['v']
+                    data = edge_info['data']
+                    
+                    interaction_type = data.get('interaction_type', 'Unknown')
+                    interaction_desc = "Type 1" if interaction_type == 1 else "Type 2" if interaction_type == 2 else "Unknown"
+                    
+                    tooltip_text = (f"INTERACTION DETAILS\n"
+                                  f"From: {u}\n"
+                                  f"To: {v}\n"
+                                  f"Interaction Type (Y): {interaction_desc}")
+                    
+                    sel.annotation.set_text(tooltip_text)
+                    sel.annotation.set_bbox(dict(
+                        boxstyle="round,pad=0.5",
+                        facecolor="lightblue",
+                        alpha=0.95,
+                        edgecolor="blue"
+                    ))
+                    sel.annotation.set_fontsize(9)
+                    
+        except Exception as e:
+            print(f"Error configurando tooltips: {e}")
+            print("Usando tooltips alternativos...")
+    
+    # Función alternativa para tooltips (sin mplcursors)
+    def configurar_tooltips_alternativos(G_filtered, pos, nodes_collection, edges_collection):
+        """Tooltips alternativos usando eventos de matplotlib"""
+        
+        # Crear área para mostrar información
+        info_box = ax_controls.text(0.05, 0.05, 
+                                   "Hover over nodes/edges for info...",
+                                   fontsize=8,
+                                   transform=ax_controls.transAxes,
+                                   bbox=dict(boxstyle="round,pad=0.5", 
+                                            facecolor="lightyellow", 
+                                            alpha=0.8))
+        
+        def on_motion(event):
+            if event.inaxes != ax_graph:
+                info_box.set_text("Hover over nodes/edges for info...")
+                fig.canvas.draw_idle()
+                return
+            
+            # Verificar si está sobre un nodo
+            node_hit = None
+            min_dist = 0.05
+            
+            for node, (x, y) in node_positions.items():
+                dist = np.sqrt((event.xdata - x)**2 + (event.ydata - y)**2)
+                if dist < min_dist:
+                    node_hit = node
+                    min_dist = dist
+                    break
+            
+            if node_hit:
+                node_data = G_filtered.nodes[node_hit]
+                info_text = (f"DRUG: {node_hit}\n"
+                           f"ATC Code: {node_data['atc_code']}\n"
+                           f"ATC Category: {node_data['atc_category']}")
+                info_box.set_text(info_text)
+                fig.canvas.draw_idle()
+                return
+            
+            edge_hit = None
+            for edge_info in edge_info_list:
+                u, v = edge_info['u'], edge_info['v']
+                if u in node_positions and v in node_positions:
+                    x1, y1 = node_positions[u]
+                    x2, y2 = node_positions[v]
+                    
+                    line_length = np.sqrt((x2-x1)**2 + (y2-y1)**2)
+                    if line_length == 0:
+                        continue
+                    
+                    t = ((event.xdata - x1)*(x2 - x1) + (event.ydata - y1)*(y2 - y1)) / (line_length**2)
+                    t = max(0, min(1, t))
+                    
+                    proj_x = x1 + t * (x2 - x1)
+                    proj_y = y1 + t * (y2 - y1)
+                    
+                    dist = np.sqrt((event.xdata - proj_x)**2 + (event.ydata - proj_y)**2)
+                    
+                    if dist < 0.03:
+                        edge_hit = edge_info
+                        break
+            
+            if edge_hit:
+                interaction_type = edge_hit['data'].get('interaction_type', 'Unknown')
+                interaction_desc = "Type 1" if interaction_type == 1 else "Type 2" if interaction_type == 2 else "Unknown"
+                
+                info_text = (f"INTERACTION:\n"
+                           f"From: {edge_hit['u']}\n"
+                           f"To: {edge_hit['v']}\n"
+                           f"Type (Y): {interaction_desc}")
+                info_box.set_text(info_text)
+                fig.canvas.draw_idle()
+                return
+            
+            # Si no está sobre nada
+            info_box.set_text("Hover over nodes/edges for info...")
+            fig.canvas.draw_idle()
+        
+        # Conectar evento de movimiento del mouse
+        fig.canvas.mpl_connect('motion_notify_event', on_motion)
+    
+    # Crear checkboxes
+    checkbox_labels = [f"{cat}" for cat in category_list]
+    checkbox_status = [active_categories[cat] for cat in category_list]
+    
+    # Ajustar posición de checkboxes
+    y_positions = np.linspace(0.9, 0.1, len(checkbox_labels))
+    
+    # Dibujar título de checkboxes
+    ax_checkboxes.text(0.1, 0.95, "Filter by ATC Category:", 
+                      fontsize=11, fontweight='bold',
+                      transform=ax_checkboxes.transAxes)
+    
+    # Crear checkboxes manualmente
+    checkboxes = []
+    for i, (label, status, y_pos) in enumerate(zip(checkbox_labels, checkbox_status, y_positions)):
+        color = ATC_COLORS.get(label[:1], '#CCCCCC') if label != 'Sin ATC' and label != 'Multi ATC' else ATC_COLORS.get(label, '#CCCCCC')
+        
+        checkbox_rect = plt.Rectangle((0.1, y_pos-0.03), 0.05, 0.05, 
+                                     facecolor='white',  
+                                     edgecolor='black',
+                                     transform=ax_checkboxes.transAxes)
+        ax_checkboxes.add_patch(checkbox_rect)
+        
+        ax_checkboxes.text(0.2, y_pos, label, 
+                          fontsize=9,
+                          transform=ax_checkboxes.transAxes,
+                          verticalalignment='center')
+        
+        # Guardar referencia
+        checkboxes.append({
+            'rect': checkbox_rect,
+            'label': label,
+            'y_pos': y_pos,
+            'category': category_list[i],
+            'color': color
+        })
+    
+    def onclick(event):
+        if event.inaxes != ax_checkboxes:
+            return
+        
+        for checkbox in checkboxes:
+            rect = checkbox['rect']
+            
+            # Coordenadas del rectángulo
+            x_min, y_min = rect.get_xy()
+            x_max = x_min + rect.get_width()
+            y_max = y_min + rect.get_height()
+            
+            # Transformar coordenadas
+            x_min_t, y_min_t = ax_checkboxes.transAxes.transform((x_min, y_min))
+            x_max_t, y_max_t = ax_checkboxes.transAxes.transform((x_max, y_max))
+            
+            # Verificar si el clic está dentro del rectángulo
+            if (x_min_t <= event.x <= x_max_t and y_min_t <= event.y <= y_max_t):
+                # Cambiar estado
+                category = checkbox['category']
+                new_state = not active_categories[category]
+                active_categories[category] = new_state
+                
+                if new_state:  # Marcado
+                    checkbox['rect'].set_facecolor(checkbox['color'])
+                else:  # Desmarcado
+                    checkbox['rect'].set_facecolor('white')
+                
+                # Redibujar gráfico
+                dibujar_grafo()
+                fig.canvas.draw_idle()
+                break
+    
+    # Conectar evento de clic
+    fig.canvas.mpl_connect('button_press_event', onclick)
+    
+   
+    def select_all(event):
+        for checkbox in checkboxes:
+            category = checkbox['category']
+            active_categories[category] = True
+            checkbox['rect'].set_facecolor(checkbox['color'])
+        
+        dibujar_grafo()
+        fig.canvas.draw_idle()
+    
+    def deselect_all(event):
+        for checkbox in checkboxes:
+            category = checkbox['category']
+            active_categories[category] = False
+            checkbox['rect'].set_facecolor('white')
+        
+        dibujar_grafo()
+        fig.canvas.draw_idle()
+    
+    select_all_text = ax_controls.text(0.1, 0.25, " Select All", 
+                                      fontsize=10, color='blue',
+                                      bbox=dict(boxstyle="round,pad=0.3", facecolor="lightblue"),
+                                      transform=ax_controls.transAxes)
+    
+    deselect_all_text = ax_controls.text(0.1, 0.15, " Deselect All", 
+                                        fontsize=10, color='red',
+                                        bbox=dict(boxstyle="round,pad=0.3", facecolor="lightcoral"),
+                                        transform=ax_controls.transAxes)
+    
+    select_all_text.set_picker(True)
+    deselect_all_text.set_picker(True)
+    
+    def on_pick(event):
+        if event.artist == select_all_text:
+            select_all(event)
+        elif event.artist == deselect_all_text:
+            deselect_all(event)
+    
+    fig.canvas.mpl_connect('pick_event', on_pick)
+    
+    # Dibujar gráfico inicial (vacío ya que todas las categorías están desmarcadas)
+    dibujar_grafo()
+    
+    plt.tight_layout()
+    plt.show()
+    
+    # Mostrar estadísticas iniciales
+    print("="*60)
+    print(f"DRUG INTERACTION NETWORK WITH TOOLTIPS")
+    print("="*60)
+    
+    if farmaco_principal:
+        print(f"\nMain Drug: {farmaco_principal}")
+    
+    print(f"\nTotal drugs in dataset: {len(G.nodes())}")
+    print(f"Total interactions in dataset: {len(G.edges())}")
+    
+    # Contar por categoría
+    category_counts = Counter()
+    for node in G.nodes():
+        if node != farmaco_principal:
+            category_counts[G.nodes[node]['atc_category']] += 1
+    
+    print(f"\nDrugs by ATC Category:")
+    for category, count in sorted(category_counts.items()):
+        print(f"  {category}: {count} drugs")
+    
+
+# Función principal para probar
 if __name__ == "__main__":
-    main()
-
+    print("Loading drug interaction data...")
+    
+    # Probar con phenobarbital
+    target_drug = "prednisone"
+    
+    print(f"\nAnalyzing interactions for: {target_drug}")
+    
+    if not MPLCURSORS_AVAILABLE:
+        print("Note: mplcursors not installed. Using alternative tooltips.")
+        print("To install: pip install mplcursors")
+    
+    # Usar la versión con tooltips
+    visualizar_grafo_con_tooltips(df, target_drug)
