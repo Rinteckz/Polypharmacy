@@ -755,10 +755,50 @@ with tab2:
         st.info("Please load and generate a network in the 'Network Visualization' tab first.")
 
 with tab3:
-    # ... (mantener el contenido del tab3 igual que antes)
+    st.subheader("ℹ️ About This Tool")
+    
+    st.markdown("""
+    ## Drug Interaction Network Analyzer
+    
+    This tool visualizes drug-drug interactions from your dataset.
+    
+    ### ATC Categories:
+    """)
+    
+    atc_table_data = []
+    for code, category in ATC_CATEGORIES.items():
+        if code in ATC_COLORS:
+            atc_table_data.append({
+                "Code": code,
+                "Category": category,
+                "Color": ATC_COLORS[code]
+            })
+    
+    atc_table = pd.DataFrame(atc_table_data)
+    
+    def color_cell(color):
+        return f'<div style="background-color:{color}; width:20px; height:20px; border-radius:3px;"></div>'
+    
+    atc_table['Color Sample'] = atc_table['Color'].apply(color_cell)
+    
+    st.markdown(atc_table[['Code', 'Category', 'Color Sample']].to_html(
+        escape=False, 
+        index=False
+    ), unsafe_allow_html=True)
+    
+    st.markdown("""
+    ### How to Use:
+    1. Upload your CSV file or use the default
+    2. Select a target drug or view all drugs
+    3. Adjust filters in the sidebar
+    4. Explore the interactive network
+    5. Use the Data Explorer tab for detailed analysis
+    """)
+
 
 # Footer
 st.markdown("---")
+
 st.markdown(
     "<div style='text-align: center; color: gray;'>"
     "💊 Drug Interaction Network Analyzer | Complete Dataset Analysis | Built with Streamlit"
@@ -780,5 +820,3 @@ if 'selected_drug' not in st.session_state:
 if 'selected_drug' in st.session_state and st.session_state['selected_drug']:
     st.info(f"Selected drug: {st.session_state['selected_drug']}")
     # Aquí podrías agregar lógica para regenerar el grafo con este fármaco
-
-
