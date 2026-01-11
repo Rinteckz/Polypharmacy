@@ -558,7 +558,7 @@ with tab3:
     
     # Mostrar tabla de categorías ATC
     atc_table = pd.DataFrame([
-        {"Code": code, "Category": category, "Color": color}
+        {"Code": code, "Category": category, "Color": ATC_COLORS}
         for code, category in ATC_CATEGORIES.items()
         if code in ATC_COLORS
     ])
@@ -599,4 +599,5 @@ if 'graph' not in st.session_state:
     st.session_state['graph'] = None
 if 'main_drug' not in st.session_state:
     st.session_state['main_drug'] = None
+
 
