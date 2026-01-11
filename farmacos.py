@@ -7,6 +7,7 @@ import numpy as np
 from collections import Counter
 import plotly.graph_objects as go
 import plotly.express as px
+import time
 
 # Configuración de la página
 st.set_page_config(
@@ -688,4 +689,5 @@ if uploaded_file:
     file_size = uploaded_file.size / (1024 * 1024)  # Convertir a MB
     if file_size > 50:  # Si el archivo es mayor a 50MB
         st.sidebar.warning(f"⚠️ Large file: {file_size:.1f} MB. Loading may take time.")
+
 
