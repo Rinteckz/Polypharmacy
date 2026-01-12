@@ -438,7 +438,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
                 })
         
         if outgoing:
-            st.write(f"** {farmaco_principal} to drug 2 ({len(outgoing)}):**")
+            st.write(f"**{farmaco_principal} to drug B ({len(outgoing)}):**")
             outgoing_df = pd.DataFrame(outgoing)
             st.dataframe(
                 outgoing_df.sort_values('Y Value'),
@@ -450,7 +450,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
             st.write("No outgoing interactions.")
         
         if incoming:
-            st.write(f"**Drug 1 to {farmaco_principal} ({len(incoming)}):**")
+            st.write(f"**Drug A to {farmaco_principal} ({len(incoming)}):**")
             incoming_df = pd.DataFrame(incoming)
             st.dataframe(
                 incoming_df.sort_values('Y Value'),
