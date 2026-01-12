@@ -16,7 +16,7 @@ def load_data():
 
 df = load_data()
 
-# SOLO CAMBIO ESTE DICCIONARIO - NUEVOS NOMBRES COMPLETOS
+# DICCIONARIO CON NOMBRES COMPLETOS DE ATC
 ATC_CATEGORIES = {
     'A': 'ALIMENTARY TRACT AND METABOLISM',
     'B': 'BLOOD AND BLOOD FORMING ORGANS',
@@ -36,7 +36,7 @@ ATC_CATEGORIES = {
     'Multi ATC': 'Multi ATC'
 }
 
-# Colores para cada categoría ATC - MANTENIDOS IGUAL
+# Colores para cada categoría ATC
 ATC_COLORS = {
     'A': '#FF6B35',
     'B': '#004E89',
@@ -74,14 +74,12 @@ def get_atc_color_and_category(atc_code, num_atc):
     
     return ATC_COLORS.get(first_char, '#CCCCCC'), ATC_CATEGORIES.get(first_char, 'Unknown')
 
-# FUNCIÓN NUEVA PARA OBTENER LA LETRA ATC DEL NOMBRE DE CATEGORÍA
+# FUNCIÓN PARA OBTENER LA LETRA ATC DEL NOMBRE DE CATEGORÍA
 def get_atc_letter_from_category(category_name):
     """Obtener la letra ATC a partir del nombre completo de la categoría"""
-    # Buscar en el diccionario ATC_CATEGORIES
     for letter, name in ATC_CATEGORIES.items():
         if name == category_name:
             return letter
-    # Para categorías especiales
     if category_name == 'Sin ATC':
         return 'Sin ATC'
     elif category_name == 'Multi ATC':
@@ -125,8 +123,7 @@ def crear_grafo_completo(df):
                       tooltip=tooltip_info)
         
         if not G.has_edge(drug1, drug2):
-            interaction_desc = "Type 1" if interaction_type == 1 else "Type 2" if interaction_type == 2 else "Unknown"
-            edge_tooltip = f"<b>Interaction Type:</b> {interaction_desc}<br><b>From:</b> {drug1} → <b>To:</b> {drug2}"
+            edge_tooltip = f"<b>From:</b> {drug1} → <b>To:</b> {drug2}"
             G.add_edge(drug1, drug2, 
                       interaction_type=interaction_type,
                       tooltip=edge_tooltip)
@@ -151,11 +148,9 @@ def crear_subgrafo_centrado(G, farmaco_objetivo):
         return None, None
 
 def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
-    """Crear visualización del grafo con Plotly - FIEL AL COMPORTAMIENTO ORIGINAL"""
+    """Crear visualización del grafo con Plotly"""
     
-    # Si no hay categorías activas, no mostrar nada (como en el original)
     if active_categories is None or not any(active_categories.values()):
-        # Crear figura vacía con mensaje
         fig = go.Figure()
         fig.update_layout(
             title=dict(
@@ -174,24 +169,19 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
         )
         return fig, None
     
-    # Filtrar nodos por categorías activas (EXACTAMENTE como en el original)
     nodes_to_keep = []
     
-    # El fármaco principal SIEMPRE se muestra si existe
     if farmaco_principal:
         nodes_to_keep.append(farmaco_principal)
     
-    # Filtrar otros nodos por categorías activas
     for node in G.nodes():
         if node == farmaco_principal:
             continue
-        
         category = G.nodes[node]['atc_category']
         if active_categories.get(category, False):
             nodes_to_keep.append(node)
     
     if not nodes_to_keep:
-        # Crear figura vacía
         fig = go.Figure()
         fig.update_layout(
             title=dict(
@@ -210,7 +200,6 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
         )
         return fig, None
     
-    # Crear subgrafo filtrado
     edges_to_keep = []
     for u, v in G.edges():
         if u in nodes_to_keep and v in nodes_to_keep:
@@ -223,9 +212,7 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
     for u, v in edges_to_keep:
         G_filtered.add_edge(u, v, **G[u][v])
     
-    # Calcular posiciones de los nodos (EXACTAMENTE como en el original)
     if farmaco_principal and farmaco_principal in G_filtered.nodes():
-        # Layout centrado en fármaco principal
         pos = {}
         pos[farmaco_principal] = np.array([0, 0])
         
@@ -244,17 +231,10 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
                 y = radius * np.sin(angle)
                 pos[neighbor] = np.array([x, y])
     else:
-        # Layout spring para cuando no hay fármaco principal
         pos = nx.spring_layout(G_filtered, k=2/np.sqrt(len(G_filtered.nodes())), 
                               iterations=50, seed=42)
     
-    # Preparar datos para los nodos
-    node_x = []
-    node_y = []
-    node_colors = []
-    node_sizes = []
-    node_texts = []
-    node_names = []
+    node_x, node_y, node_colors, node_sizes, node_texts, node_names = [], [], [], [], [], []
     
     for node in G_filtered.nodes():
         x, y = pos[node]
@@ -262,27 +242,22 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
         node_y.append(y)
         node_colors.append(G_filtered.nodes[node]['color'])
         
-        # Tamaño diferente para fármaco principal (como en el original)
         if farmaco_principal and node == farmaco_principal:
-            node_sizes.append(30)  # Equivalente a 1200 en matplotlib
+            node_sizes.append(30)
         else:
-            node_sizes.append(15)  # Equivalente a 600 en matplotlib
+            node_sizes.append(15)
         
         node_texts.append(G_filtered.nodes[node]['tooltip'])
         
-        # Nombre abreviado para etiqueta (como en el original)
         if farmaco_principal and node == farmaco_principal:
-            node_names.append(node)  # Nombre completo para fármaco principal
+            node_names.append(node)
         else:
             if len(node) > 20:
                 node_names.append(node[:17] + "...")
             else:
                 node_names.append(node)
     
-    # Preparar datos para las aristas
-    edge_x = []
-    edge_y = []
-    edge_texts = []
+    edge_x, edge_y, edge_texts = [], [], []
     
     for u, v, data in G_filtered.edges(data=True):
         x0, y0 = pos[u]
@@ -298,7 +273,6 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
         
         edge_texts.append(data['tooltip'])
     
-    # Crear trazas de Plotly
     edge_trace = go.Scatter(
         x=edge_x, y=edge_y,
         line=dict(width=1.5, color='gray'),
@@ -326,13 +300,11 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
         hoverlabel=dict(bgcolor='black', font_size=12)
     )
     
-    # Título basado en si hay fármaco principal o no
     if farmaco_principal:
         title_text = f"Drug: {farmaco_principal}<br>Drugs: {len(G_filtered.nodes())} | Interactions: {len(G_filtered.edges())}"
     else:
         title_text = f"Complete Network<br>Drugs: {len(G_filtered.nodes())} | Interactions: {len(G_filtered.edges())}"
     
-    # Crear figura
     fig = go.Figure(data=[edge_trace, node_trace],
                    layout=go.Layout(
                        title=dict(
@@ -362,6 +334,141 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
     
     return fig, G_filtered
 
+def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
+    """Mostrar análisis detallado de interacciones con valores de 'Y'"""
+    
+    if not G_filtrado or len(G_filtrado.edges()) == 0:
+        return
+    
+    st.subheader("📊 Interaction Analysis")
+    
+    # Preparar datos para análisis
+    interacciones_data = []
+    for u, v, data in G_filtrado.edges(data=True):
+        y_value = data.get('interaction_type', 'N/A')
+        interacciones_data.append({
+            'From': u,
+            'To': v,
+            'Y Value': y_value,
+            'Direction': f"{u} → {v}"
+        })
+    
+    interacciones_df = pd.DataFrame(interacciones_data)
+    
+    # Mostrar estadísticas de valores Y
+    st.write("**Y Value Distribution:**")
+    y_counts = interacciones_df['Y Value'].value_counts().sort_index()
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        for y_val, count in y_counts.items():
+            percentage = (count / len(interacciones_df)) * 100
+            st.write(f"**Y = {y_val}:** {count} interactions ({percentage:.1f}%)")
+    
+    with col2:
+        if len(y_counts) > 0:
+            fig_pie = px.pie(
+                values=y_counts.values,
+                names=[f"Y = {k}" for k in y_counts.index],
+                title="Distribution of Y Values",
+                color_discrete_sequence=px.colors.qualitative.Set3
+            )
+            st.plotly_chart(fig_pie, use_container_width=True)
+    
+    # Mostrar tabla de interacciones
+    with st.expander("📋 View All Interactions with Y Values", expanded=False):
+        # Ordenar por valor Y
+        interacciones_df = interacciones_df.sort_values('Y Value')
+        
+        # Agregar colores según valor Y
+        def color_y_value(val):
+            if val == 1:
+                return 'background-color: #FFCCCC'
+            elif val == 2:
+                return 'background-color: #CCE5FF'
+            else:
+                return ''
+        
+        styled_df = interacciones_df.style.applymap(
+            color_y_value, subset=['Y Value']
+        )
+        
+        st.dataframe(
+            styled_df,
+            use_container_width=True,
+            column_config={
+                "From": st.column_config.TextColumn("From (Drug A)", width="medium"),
+                "To": st.column_config.TextColumn("To (Drug B)", width="medium"),
+                "Y Value": st.column_config.NumberColumn("Y Value", width="small"),
+                "Direction": st.column_config.TextColumn("Direction", width="large")
+            },
+            hide_index=True
+        )
+    
+    # Análisis por fármaco principal
+    if farmaco_principal:
+        st.write(f"**Interactions involving {farmaco_principal}:**")
+        
+        # Interacciones salientes (de farmaco_principal a otros)
+        outgoing = []
+        for _, row in interacciones_df.iterrows():
+            if row['From'] == farmaco_principal:
+                outgoing.append({
+                    'Target': row['To'],
+                    'Y Value': row['Y Value'],
+                    'Type': 'Outgoing'
+                })
+        
+        # Interacciones entrantes (de otros a farmaco_principal)
+        incoming = []
+        for _, row in interacciones_df.iterrows():
+            if row['To'] == farmaco_principal:
+                incoming.append({
+                    'Source': row['From'],
+                    'Y Value': row['Y Value'],
+                    'Type': 'Incoming'
+                })
+        
+        if outgoing:
+            st.write(f"**Outgoing interactions ({len(outgoing)}):**")
+            outgoing_df = pd.DataFrame(outgoing)
+            st.dataframe(
+                outgoing_df.sort_values('Y Value'),
+                use_container_width=True,
+                hide_index=True
+            )
+        
+        if incoming:
+            st.write(f"**Incoming interactions ({len(incoming)}):**")
+            incoming_df = pd.DataFrame(incoming)
+            st.dataframe(
+                incoming_df.sort_values('Y Value'),
+                use_container_width=True,
+                hide_index=True
+            )
+        
+        # Resumen estadístico
+        if outgoing or incoming:
+            st.write("**Summary:**")
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                if outgoing:
+                    avg_outgoing = outgoing_df['Y Value'].mean()
+                    st.metric("Avg Y (Outgoing)", f"{avg_outgoing:.2f}")
+            
+            with col2:
+                if incoming:
+                    avg_incoming = incoming_df['Y Value'].mean()
+                    st.metric("Avg Y (Incoming)", f"{avg_incoming:.2f}")
+            
+            with col3:
+                total = len(outgoing) + len(incoming)
+                if total > 0:
+                    total_avg = (sum(outgoing_df['Y Value']) + sum(incoming_df['Y Value'])) / total
+                    st.metric("Total Avg Y", f"{total_avg:.2f}")
+
 def main():
     st.title("Drug Interaction Network Visualization")
     
@@ -376,7 +483,7 @@ def main():
     with st.sidebar:
         st.header("Controls")
         
-        # Opción para seleccionar fármaco principal (NUEVO para Streamlit)
+        # Opción para seleccionar fármaco principal
         st.subheader("Select Main Drug (Optional)")
         all_drugs = sorted(set(df['Common_name_x'].tolist() + df['Common_name_y'].tolist()))
         
@@ -389,7 +496,6 @@ def main():
         
         if farmaco_principal_seleccionado != "None":
             farmaco_principal = farmaco_principal_seleccionado
-            # Crear subgrafo centrado en el fármaco
             G_actual, farmaco_real = crear_subgrafo_centrado(G_completo, farmaco_principal)
             if G_actual is None:
                 st.error(f"Drug '{farmaco_principal}' not found!")
@@ -406,14 +512,13 @@ def main():
         # Obtener todas las categorías presentes en el grafo actual
         all_categories = set()
         for node in G_actual.nodes():
-            # Si hay fármaco principal, no incluirlo en las categorías (como en el original)
             if farmaco_principal and node == farmaco_principal:
                 continue
             all_categories.add(G_actual.nodes[node]['atc_category'])
         
         category_list = sorted(list(all_categories))
         
-        # Inicializar checkboxes desmarcados (como en el original)
+        # Inicializar checkboxes desmarcados
         if 'active_categories' not in st.session_state:
             st.session_state.active_categories = {cat: False for cat in category_list}
         
@@ -425,19 +530,16 @@ def main():
             
             col1, col2 = st.columns([1, 3])
             with col1:
-                # Checkbox con estado guardado - usar key único
                 checked = st.checkbox(
                     "",
                     value=st.session_state.active_categories.get(category, False),
-                    key=f"checkbox_{category.replace(' ', '_').replace(',', '')}",  # Key sin espacios ni comas
+                    key=f"checkbox_{category.replace(' ', '_').replace(',', '')}",
                     label_visibility="collapsed"
                 )
-                # Actualizar el estado del diccionario si cambió
                 if checked != st.session_state.active_categories.get(category, False):
                     st.session_state.active_categories[category] = checked
             
             with col2:
-                # Mostrar categoría con color y contador
                 atc_letter = get_atc_letter_from_category(category)
                 if atc_letter:
                     color = ATC_COLORS.get(atc_letter, '#CCCCCC')
@@ -450,7 +552,7 @@ def main():
                     unsafe_allow_html=True
                 )
         
-        # Botones de selección rápida - VERSIÓN CORREGIDA
+        # Botones de selección rápida
         col1, col2 = st.columns(2)
         
         with col1:
@@ -459,7 +561,6 @@ def main():
         with col2:
             deselect_all_clicked = st.button("Deselect All", use_container_width=True, key="deselect_all_btn")
         
-        # Manejar los clics de los botones
         if select_all_clicked:
             for category in category_list:
                 st.session_state.active_categories[category] = True
@@ -475,10 +576,8 @@ def main():
     
     # Verificar si hay algo para mostrar
     if not any(st.session_state.active_categories.values()) and not farmaco_principal:
-        # Mostrar mensaje como en el original
         st.info("👈 **Please select at least one ATC category from the sidebar to display drugs.**")
         
-        # Mostrar estadísticas generales
         with st.expander("Dataset Statistics", expanded=True):
             col1, col2 = st.columns(2)
             with col1:
@@ -486,14 +585,12 @@ def main():
             with col2:
                 st.metric("Total Interactions", len(G_completo.edges()))
             
-            # Mostrar distribución de categorías
             category_counts = Counter()
             for node in G_completo.nodes():
                 category_counts[G_completo.nodes[node]['atc_category']] += 1
             
             st.write("**Drugs by ATC Category:**")
             for category, count in sorted(category_counts.items()):
-                # Obtener la letra ATC y luego el color
                 atc_letter = get_atc_letter_from_category(category)
                 if atc_letter:
                     color = ATC_COLORS.get(atc_letter, '#CCCCCC')
@@ -516,7 +613,7 @@ def main():
         st.plotly_chart(fig, use_container_width=True, 
                        config={'displayModeBar': True, 'scrollZoom': True})
         
-        # Mostrar estadísticas
+        # Mostrar estadísticas básicas
         st.subheader("Statistics")
         
         if G_filtrado:
@@ -530,29 +627,8 @@ def main():
                     degree = G_filtrado.degree(farmaco_principal)
                     st.metric(f"Connections of {farmaco_principal}", degree)
             
-            # Mostrar detalles por categoría
-            with st.expander("View details by category", expanded=False):
-                category_counts = Counter()
-                for node in G_filtrado.nodes():
-                    if node != farmaco_principal:
-                        category_counts[G_filtrado.nodes[node]['atc_category']] += 1
-                
-                if category_counts:
-                    for category, count in sorted(category_counts.items()):
-                        # Obtener la letra ATC y luego el color
-                        atc_letter = get_atc_letter_from_category(category)
-                        if atc_letter:
-                            color = ATC_COLORS.get(atc_letter, '#CCCCCC')
-                        else:
-                            color = '#CCCCCC'
-                        
-                        st.markdown(
-                            f"<span style='color:{color}; font-weight:bold;'>■</span> "
-                            f"{category}: {count} drugs",
-                            unsafe_allow_html=True
-                        )
-                else:
-                    st.write("No drugs from selected categories (only main drug shown)")
+            # Mostrar análisis de interacciones
+            mostrar_analisis_interacciones(G_filtrado, farmaco_principal)
         
         # Mostrar lista de fármacos visibles
         if G_filtrado and len(G_filtrado.nodes()) > 0:
@@ -573,12 +649,12 @@ def main():
     st.markdown("---")
     st.markdown("**How to use:**")
     st.markdown("""
-    1. **Select a main drug** (optional) from the dropdown to focus on its interactions
-    2. **Select ATC categories** you want to visualize (all are deselected by default)
-    3. **Use 'Select All' / 'Deselect All' buttons** for quick selection
-    4. **Hover over nodes** to see drug details
-    5. **Hover over edges** to see interaction details
-    6. **Use the mouse** to pan and zoom the graph
+    1. **Select a main drug** (optional) to focus on its interactions
+    2. **Select ATC categories** to filter drugs by therapeutic category
+    3. **View network visualization** showing drug interactions
+    4. **Check Interaction Analysis section** for detailed Y values
+    5. **Y values** represent the effect of Drug A on Drug B (from CSV column 'Y')
+    6. **Use mouse** to pan and zoom the graph
     """)
 
 if __name__ == "__main__":
