@@ -341,7 +341,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
         st.info("No interactions to analyze.")
         return
     
-    st.subheader("📊 Interaction Analysis")
+    st.subheader("Interaction Analysis")
     
     # Preparar datos para análisis
     interacciones_data = []
@@ -378,7 +378,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
             st.plotly_chart(fig_pie, use_container_width=True)
     
     # Mostrar tabla de interacciones
-    with st.expander("📋 View All Interactions with Y Values", expanded=False):
+    with st.expander("View All Interactions with Y value", expanded=False):
         # Ordenar por valor Y
         interacciones_df = interacciones_df.sort_values('Y Value')
         
@@ -428,7 +428,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
                 })
         
         if outgoing:
-            st.write(f"**Outgoing interactions ({len(outgoing)}):**")
+            st.write(f"** {farmaco_principal} to drug 2 ({len(outgoing)}):**")
             outgoing_df = pd.DataFrame(outgoing)
             st.dataframe(
                 outgoing_df.sort_values('Y Value'),
@@ -440,7 +440,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
             st.write("No outgoing interactions.")
         
         if incoming:
-            st.write(f"**Incoming interactions ({len(incoming)}):**")
+            st.write(f"**Drug 1 to {farmaco_principal} ({len(incoming)}):**")
             incoming_df = pd.DataFrame(incoming)
             st.dataframe(
                 incoming_df.sort_values('Y Value'),
@@ -451,35 +451,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
             incoming_df = None
             st.write("No incoming interactions.")
         
-        # Resumen estadístico - VERSIÓN CORREGIDA
-        if outgoing or incoming:
-            st.write("**Summary:**")
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                if outgoing and outgoing_df is not None and not outgoing_df.empty:
-                    avg_outgoing = outgoing_df['Y Value'].mean()
-                    st.metric("Avg Y (Outgoing)", f"{avg_outgoing:.2f}")
-                else:
-                    st.metric("Avg Y (Outgoing)", "N/A")
-            
-            with col2:
-                if incoming and incoming_df is not None and not incoming_df.empty:
-                    avg_incoming = incoming_df['Y Value'].mean()
-                    st.metric("Avg Y (Incoming)", f"{avg_incoming:.2f}")
-                else:
-                    st.metric("Avg Y (Incoming)", "N/A")
-            
-            with col3:
-                total = len(outgoing) + len(incoming)
-                if total > 0:
-                    # Asegurarnos de que los DataFrames existen antes de usarlos
-                    outgoing_sum = sum(outgoing_df['Y Value']) if outgoing and outgoing_df is not None and not outgoing_df.empty else 0
-                    incoming_sum = sum(incoming_df['Y Value']) if incoming and incoming_df is not None and not incoming_df.empty else 0
-                    total_avg = (outgoing_sum + incoming_sum) / total
-                    st.metric("Total Avg Y", f"{total_avg:.2f}")
-                else:
-                    st.metric("Total Avg Y", "N/A")
+        
 
 def main():
     st.title("Drug Interaction Network Visualization")
@@ -518,8 +490,7 @@ def main():
             farmaco_principal = None
             G_actual = G_completo
         
-        st.subheader("Filter by ATC Category")
-        st.write("Select categories to display (none selected by default):")
+        
         
         # Obtener todas las categorías presentes en el grafo actual
         all_categories = set()
@@ -665,12 +636,9 @@ def main():
     2. **Select ATC categories** to filter drugs by therapeutic category
     3. **View network visualization** showing drug interactions
     4. **Check Interaction Analysis section** for detailed Y values
-    5. **Y values** represent the effect of Drug A on Drug B (from CSV column 'Y')
+    5. **Y values** represent the effect of Drug A on Drug B (view page ASADSDAD)
     6. **Use mouse** to pan and zoom the graph
     """)
 
 if __name__ == "__main__":
     main()
-
-
-
