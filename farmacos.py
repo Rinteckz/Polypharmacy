@@ -421,11 +421,7 @@ def main():
             
             with col2:
                 # Mostrar categoría con color y contador
-                color = ATC_COLORS.get(
-                category if category in ATC_COLORS else category[0],
-                             '#CCCCCC'
-                )
-
+                color = ATC_COLORS.get(category[:1], ATC_COLORS.get(category, '#CCCCCC'))
                 st.markdown(
                     f"<span style='color:{color}; font-weight:bold;'>■</span> "
                     f"{category} ({count})",
@@ -546,7 +542,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
 
 
