@@ -386,7 +386,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
         
         
         st.dataframe(
-            styled_df,
+            
             use_container_width=True,
             column_config={
                 "From": st.column_config.TextColumn("From (Drug A)", width="medium"),
@@ -665,4 +665,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
