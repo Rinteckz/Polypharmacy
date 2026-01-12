@@ -73,6 +73,20 @@ def get_atc_color_and_category(atc_code, num_atc):
     
     return ATC_COLORS.get(first_char, '#CCCCCC'), ATC_CATEGORIES.get(first_char, 'Unknown')
 
+# FUNCIÓN NUEVA PARA OBTENER LA LETRA ATC DEL NOMBRE DE CATEGORÍA
+def get_atc_letter_from_category(category_name):
+    """Obtener la letra ATC a partir del nombre completo de la categoría"""
+    # Buscar en el diccionario ATC_CATEGORIES
+    for letter, name in ATC_CATEGORIES.items():
+        if name == category_name:
+            return letter
+    # Para categorías especiales
+    if category_name == 'Sin ATC':
+        return 'Sin ATC'
+    elif category_name == 'Multi ATC':
+        return 'Multi ATC'
+    return None
+
 @st.cache_data
 def crear_grafo_completo(df):
     """Crear grafo completo con todos los fármacos"""
@@ -420,12 +434,14 @@ def main():
                 st.session_state.active_categories[category] = checked
             
             with col2:
-                # Mostrar categoría con color y contador
-                color = ATC_COLORS.get(
-                    category if category in ATC_COLORS else category[0],
-                    '#CCCCCC'
-                )
-
+                # Mostrar categoría con color y contador - CAMBIADO
+                # Obtener la letra ATC correspondiente
+                atc_letter = get_atc_letter_from_category(category)
+                if atc_letter:
+                    color = ATC_COLORS.get(atc_letter, '#CCCCCC')
+                else:
+                    color = '#CCCCCC'
+                
                 st.markdown(
                     f"<span style='color:{color}; font-weight:bold;'>■</span> "
                     f"{category} ({count})",
@@ -469,7 +485,13 @@ def main():
             
             st.write("**Drugs by ATC Category:**")
             for category, count in sorted(category_counts.items()):
-                color = ATC_COLORS.get(category[:1], ATC_COLORS.get(category, '#CCCCCC'))
+                # CAMBIADO: Obtener la letra ATC y luego el color
+                atc_letter = get_atc_letter_from_category(category)
+                if atc_letter:
+                    color = ATC_COLORS.get(atc_letter, '#CCCCCC')
+                else:
+                    color = '#CCCCCC'
+                
                 st.markdown(
                     f"<span style='color:{color}; font-weight:bold;'>■</span> "
                     f"{category}: {count} drugs",
@@ -509,7 +531,13 @@ def main():
                 
                 if category_counts:
                     for category, count in sorted(category_counts.items()):
-                        color = ATC_COLORS.get(category[:1], ATC_COLORS.get(category, '#CCCCCC'))
+                        # CAMBIADO: Obtener la letra ATC y luego el color
+                        atc_letter = get_atc_letter_from_category(category)
+                        if atc_letter:
+                            color = ATC_COLORS.get(atc_letter, '#CCCCCC')
+                        else:
+                            color = '#CCCCCC'
+                        
                         st.markdown(
                             f"<span style='color:{color}; font-weight:bold;'>■</span> "
                             f"{category}: {count} drugs",
@@ -546,6 +574,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
