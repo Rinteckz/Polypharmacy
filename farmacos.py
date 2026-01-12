@@ -548,11 +548,11 @@ def pestaña_visualizacion():
         # Botones de selección rápida
         col1, col2 = st.columns(2)
         
-        with col1:
-            select_all_clicked = st.button("Select All", use_container_width=True, key="select_all_btn")
+        #with col1:
+         #   select_all_clicked = st.button("Select All", use_container_width=True, key="select_all_btn")
         
-        with col2:
-            deselect_all_clicked = st.button("Deselect All", use_container_width=True, key="deselect_all_btn")
+       # with col2:
+        #    deselect_all_clicked = st.button("Deselect All", use_container_width=True, key="deselect_all_btn")
         
         if select_all_clicked:
             for category in category_list:
