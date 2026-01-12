@@ -25,7 +25,7 @@ meeaning_y=load_data2()
 @st.cache_data
 def load_essential_drugs():
     # Cargar el archivo Excel de fármacos esenciales
-    essentials_df = pd.read_excel(r"GlobalEssentialMedicinesDatabase.xlsx")
+    essentials_df = pd.read_excel(r"farmacos_esenciales.csv")
     return essentials_df
 
 # DICCIONARIO CON NOMBRES COMPLETOS DE ATC
