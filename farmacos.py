@@ -343,7 +343,7 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
                    ))
     
     return fig, G_filtered
-
+st.title("**Drug-Drug interactions**")
 def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
     """Mostrar análisis detallado de interacciones con valores de 'Y'"""
     
