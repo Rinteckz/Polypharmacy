@@ -16,26 +16,27 @@ def load_data():
 
 df = load_data()
 
+# SOLO CAMBIO ESTE DICCIONARIO - NUEVOS NOMBRES COMPLETOS
 ATC_CATEGORIES = {
-    'A': 'Alimentary tract',
-    'B': 'Blood organs',
-    'C': 'Cardiovascular',
-    'D': 'Dermatologicals',
-    'G': 'Genito-urinary',
-    'H': 'Hormonal',
-    'J': 'Anti-infectives',
-    'L': 'Antineoplastic',
-    'M': 'Musculo-skeletal',
-    'N': 'Nervous system',
-    'P': 'Antiparasitic',
-    'R': 'Respiratory',
-    'S': 'Sensory organs',
-    'V': 'Various',
+    'A': 'ALIMENTARY TRACT AND METABOLISM',
+    'B': 'BLOOD AND BLOOD FORMING ORGANS',
+    'C': 'CARDIOVASCULAR SYSTEM',
+    'D': 'DERMATOLOGICALS',
+    'G': 'GENITO URINARY SYSTEM AND SEX HORMONES',
+    'H': 'SYSTEMIC HORMONAL PREPARATIONS, EXCL. SEX HORMONES AND INSULINS',
+    'J': 'ANTIINFECTIVES FOR SYSTEMIC USE',
+    'L': 'ANTINEOPLASTIC AND IMMUNOMODULATING AGENTS',
+    'M': 'MUSCULO-SKELETAL SYSTEM',
+    'N': 'NERVOUS SYSTEM',
+    'P': 'ANTIPARASITIC PRODUCTS, INSECTICIDES AND REPELLENTS',
+    'R': 'RESPIRATORY SYSTEM',
+    'S': 'SENSORY ORGANS',
+    'V': 'VARIOUS',
     'Sin ATC': 'No ATC',
     'Multi ATC': 'Multi ATC'
 }
 
-# Colores para cada categoría ATC
+# Colores para cada categoría ATC - MANTENIDOS IGUAL
 ATC_COLORS = {
     'A': '#FF6B35',
     'B': '#004E89',
@@ -424,18 +425,19 @@ def main():
             
             col1, col2 = st.columns([1, 3])
             with col1:
-                # Checkbox con estado guardado
+                # Checkbox con estado guardado - usar key único
                 checked = st.checkbox(
                     "",
                     value=st.session_state.active_categories.get(category, False),
-                    key=f"cat_{category}",
+                    key=f"checkbox_{category.replace(' ', '_').replace(',', '')}",  # Key sin espacios ni comas
                     label_visibility="collapsed"
                 )
-                st.session_state.active_categories[category] = checked
+                # Actualizar el estado del diccionario si cambió
+                if checked != st.session_state.active_categories.get(category, False):
+                    st.session_state.active_categories[category] = checked
             
             with col2:
-                # Mostrar categoría con color y contador - CAMBIADO
-                # Obtener la letra ATC correspondiente
+                # Mostrar categoría con color y contador
                 atc_letter = get_atc_letter_from_category(category)
                 if atc_letter:
                     color = ATC_COLORS.get(atc_letter, '#CCCCCC')
@@ -448,19 +450,25 @@ def main():
                     unsafe_allow_html=True
                 )
         
-        # Botones de selección rápida
+        # Botones de selección rápida - VERSIÓN CORREGIDA
         col1, col2 = st.columns(2)
+        
         with col1:
-            if st.button("Select All", use_container_width=True):
-                for category in category_list:
-                    st.session_state.active_categories[category] = True
-                    st.session_state[f"cat_{category}"] = True
+            select_all_clicked = st.button("Select All", use_container_width=True, key="select_all_btn")
         
         with col2:
-            if st.button("Deselect All", use_container_width=True):
-                for category in category_list:
-                    st.session_state.active_categories[category] = False
-                    st.session_state[f"cat_{category}"] = False
+            deselect_all_clicked = st.button("Deselect All", use_container_width=True, key="deselect_all_btn")
+        
+        # Manejar los clics de los botones
+        if select_all_clicked:
+            for category in category_list:
+                st.session_state.active_categories[category] = True
+            st.rerun()
+        
+        if deselect_all_clicked:
+            for category in category_list:
+                st.session_state.active_categories[category] = False
+            st.rerun()
     
     # Área principal
     st.subheader("Network Visualization")
@@ -485,7 +493,7 @@ def main():
             
             st.write("**Drugs by ATC Category:**")
             for category, count in sorted(category_counts.items()):
-                # CAMBIADO: Obtener la letra ATC y luego el color
+                # Obtener la letra ATC y luego el color
                 atc_letter = get_atc_letter_from_category(category)
                 if atc_letter:
                     color = ATC_COLORS.get(atc_letter, '#CCCCCC')
@@ -531,7 +539,7 @@ def main():
                 
                 if category_counts:
                     for category, count in sorted(category_counts.items()):
-                        # CAMBIADO: Obtener la letra ATC y luego el color
+                        # Obtener la letra ATC y luego el color
                         atc_letter = get_atc_letter_from_category(category)
                         if atc_letter:
                             color = ATC_COLORS.get(atc_letter, '#CCCCCC')
@@ -567,13 +575,13 @@ def main():
     st.markdown("""
     1. **Select a main drug** (optional) from the dropdown to focus on its interactions
     2. **Select ATC categories** you want to visualize (all are deselected by default)
-    3. **Hover over nodes** to see drug details
-    4. **Hover over edges** to see interaction details
-    5. **Use the mouse** to pan and zoom the graph
+    3. **Use 'Select All' / 'Deselect All' buttons** for quick selection
+    4. **Hover over nodes** to see drug details
+    5. **Hover over edges** to see interaction details
+    6. **Use the mouse** to pan and zoom the graph
     """)
 
 if __name__ == "__main__":
     main()
-
 
 
