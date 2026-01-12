@@ -840,7 +840,7 @@ def pestaña_esenciales():
             "Common_Name": st.column_config.TextColumn("Drug Name", width="medium"),
             "ATC_Code": st.column_config.TextColumn("ATC Code", width="small"),
             "Source": st.column_config.TextColumn("Found in", width="small"),
-            "Y_Value": st.column_config.NumberColumn("Y Value", width="small")
+            "Y_Value": st.column_config.NumberColumn("Y Value", width="small"),
             "Drug_Pair": st.column_config.TextColumn("Drug Pair", width="large")
         },
         hide_index=True
