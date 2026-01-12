@@ -22,6 +22,11 @@ def load_data2():
     return pd.read_csv(r"drugbank_ddi_label_map.csv")
 meeaning_y=load_data2()
 
+@st.cache_data
+def load_data():
+    essentials_df = pd.read_excel(r"GlobalEssentialMedicinesDatabase.xlsx")  # tu nuevo archivo
+    return essentials_df
+
 # DICCIONARIO CON NOMBRES COMPLETOS DE ATC
 ATC_CATEGORIES = {
     'A': 'ALIMENTARY TRACT AND METABOLISM',
@@ -566,7 +571,7 @@ def pestaña_visualizacion():
     
     # Verificar si hay algo para mostrar
     if not any(st.session_state.active_categories.values()) and not farmaco_principal:
-        st.info("👈 **Please select at least one ATC category from the sidebar to display drugs.**")
+        st.info("**Please select at least one ATC category from the sidebar to display drugs.**")
         
         with st.expander("Dataset Statistics", expanded=True):
             col1, col2 = st.columns(2)
@@ -634,6 +639,333 @@ def pestaña_visualizacion():
                             f"<span style='color:{color};'>●</span> {drug} ({category})",
                             unsafe_allow_html=True
                         )
+
+
+
+def procesar_pais(dd_df, essentials_df, pais):
+    """
+    Filtrar interacciones para un país específico basado en fármacos esenciales
+    """
+    # 1. Obtener fármacos esenciales del país
+    if pais in essentials_df.columns:
+        farmacos_esenciales = essentials_df[essentials_df[pais] == 1]['Medicine'].tolist()
+        atc_codes_esenciales = essentials_df[essentials_df[pais] == 1]['ATC code primary'].dropna().tolist()
+        
+        # También considerar códigos secundarios si existen
+        if 'ATC code secondary' in essentials_df.columns:
+            atc_secundarios = essentials_df[essentials_df[pais] == 1]['ATC code secondary'].dropna().tolist()
+            atc_codes_esenciales.extend(atc_secundarios)
+    
+    else:
+        st.error(f"País '{pais}' no encontrado en el dataset")
+        return pd.DataFrame()
+    
+    # 2. Crear lista de ATC codes únicos
+    atc_uniques = []
+    for atc in atc_codes_esenciales:
+        if isinstance(atc, str):
+            # Separar por | si hay múltiples códigos
+            atc_uniques.extend([a.strip() for a in atc.split('|')])
+    
+    # 3. Filtrar DDIBUENO por fármacos esenciales
+    # Opción A: Filtrar por nombre de fármaco
+    filtered_by_name = dd_df[
+        dd_df['Common_name_x'].isin(farmacos_esenciales) | 
+        dd_df['Common_name_y'].isin(farmacos_esenciales)
+    ].copy()
+    
+    # Opción B: Filtrar por código ATC (más robusto)
+    filtered_by_atc = dd_df[
+        dd_df['atc_code_x'].isin(atc_uniques) | 
+        dd_df['atc_code_y'].isin(atc_uniques)
+    ].copy()
+    
+    # Combinar ambos filtros
+    filtered_df = pd.concat([filtered_by_name, filtered_by_atc]).drop_duplicates()
+    
+    # 4. Agregar información del país
+    filtered_df['Country'] = pais
+    filtered_df['Drug_A_Essential'] = filtered_df['Common_name_x'].isin(farmacos_esenciales)
+    filtered_df['Drug_B_Essential'] = filtered_df['Common_name_y'].isin(farmacos_esenciales)
+    
+    return filtered_df, farmacos_esenciales, atc_uniques
+
+
+
+
+
+
+def pestaña_esenciales(dd_df, essentials_df):
+    """Pestaña para análisis de fármacos esenciales por país"""
+    
+    st.title("🌍 Essential Drugs Analysis")
+    
+    # Sidebar para seleccionar país
+    with st.sidebar:
+        st.header("Country Selection")
+        
+        # Obtener lista de países del dataset
+        # Las primeras columnas son: Medicine, ATC code primary, ATC code secondary, WHO Model List
+        paises = [col for col in essentials_df.columns if col not in 
+                 ['Medicine', 'ATC code primary', 'ATC code secondary', 'WHO Model List of Essential Medications']]
+        
+        # Seleccionar país
+        pais_seleccionado = st.selectbox(
+            "Select Country:",
+            paises,
+            index=paises.index('Mexico') if 'Mexico' in paises else 0
+        )
+        
+        # Opción para múltiples países
+        paises_seleccionados = st.multiselect(
+            "Or select multiple countries:",
+            paises,
+            default=[pais_seleccionado] if pais_seleccionado else []
+        )
+        
+        # Opciones de análisis
+        st.header("Analysis Options")
+        show_stats = st.checkbox("Show Statistics", True)
+        show_network = st.checkbox("Show Network Visualization", True)
+        show_interactions = st.checkbox("Show Drug Interactions", True)
+        compare_countries = st.checkbox("Compare Countries", False)
+    
+    # Contenido principal
+    if compare_countries and len(paises_seleccionados) > 1:
+        mostrar_comparacion_paises(dd_df, essentials_df, paises_seleccionados)
+    elif len(paises_seleccionados) == 1:
+        mostrar_analisis_pais(dd_df, essentials_df, paises_seleccionados[0], 
+                             show_stats, show_network, show_interactions)
+    else:
+        st.info("👈 Please select a country from the sidebar to start analysis")
+
+def mostrar_analisis_pais(dd_df, essentials_df, pais, show_stats, show_network, show_interactions):
+    """Mostrar análisis para un país específico"""
+    
+    st.header(f"🇺🇳 Analysis for {pais}")
+    
+    # Procesar datos del país
+    with st.spinner(f"Processing data for {pais}..."):
+        filtered_df, farmacos_esenciales, atc_codes = procesar_pais(dd_df, essentials_df, pais)
+    
+    if filtered_df.empty:
+        st.warning(f"No interactions found for essential drugs in {pais}")
+        return
+    
+    # 1. Estadísticas principales
+    if show_stats:
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Essential Drugs", len(farmacos_esenciales))
+        with col2:
+            st.metric("Unique ATC Codes", len(atc_codes))
+        with col3:
+            st.metric("Total Interactions", len(filtered_df))
+        with col4:
+            essential_interactions = len(filtered_df[
+                filtered_df['Drug_A_Essential'] & filtered_df['Drug_B_Essential']
+            ])
+            st.metric("Both Essential", essential_interactions)
+    
+    # 2. Top fármacos más interactivos
+    st.subheader("📊 Top Interactive Essential Drugs")
+    
+    # Contar interacciones por fármaco
+    interacciones_por_farmaco = {}
+    for _, row in filtered_df.iterrows():
+        if row['Drug_A_Essential']:
+            interacciones_por_farmaco[row['Common_name_x']] = \
+                interacciones_por_farmaco.get(row['Common_name_x'], 0) + 1
+        if row['Drug_B_Essential']:
+            interacciones_por_farmaco[row['Common_name_y']] = \
+                interacciones_por_farmaco.get(row['Common_name_y'], 0) + 1
+    
+    if interacciones_por_farmaco:
+        top_drugs = pd.DataFrame(
+            interacciones_por_farmaco.items(),
+            columns=['Drug', 'Interaction Count']
+        ).sort_values('Interaction Count', ascending=False).head(10)
+        
+        st.dataframe(top_drugs, use_container_width=True)
+    
+    # 3. Visualización de red (similar a tu código original)
+    if show_network:
+        st.subheader("🌐 Interaction Network")
+        
+        # Crear grafo solo con fármacos esenciales
+        G_pais = crear_grafo_completo(filtered_df)
+        
+        # Filtrar solo nodos esenciales
+        nodes_to_keep = [
+            node for node in G_pais.nodes() 
+            if node in farmacos_esenciales
+        ]
+        
+        G_filtered = G_pais.subgraph(nodes_to_keep).copy()
+        
+        # Crear visualización
+        fig, _ = crear_grafo_plotly(G_filtered)
+        st.plotly_chart(fig, use_container_width=True)
+    
+    # 4. Tabla de interacciones
+    if show_interactions:
+        st.subheader("💊 Drug Interactions Details")
+        
+        with st.expander("View All Interactions", expanded=False):
+            # Agrupar por severidad
+            filtered_df['Severity'] = filtered_df['Y'].map({
+                0: 'None', 1: 'Mild', 2: 'Moderate', 3: 'Severe', 4: 'Contraindicated'
+            })
+            
+            st.dataframe(
+                filtered_df[['Common_name_x', 'Common_name_y', 'Y', 'Severity', 
+                           'Drug_A_Essential', 'Drug_B_Essential']].rename(
+                    columns={
+                        'Common_name_x': 'Drug A',
+                        'Common_name_y': 'Drug B',
+                        'Y': 'Y Value',
+                        'Drug_A_Essential': 'A is Essential',
+                        'Drug_B_Essential': 'B is Essential'
+                    }
+                ),
+                use_container_width=True,
+                hide_index=True
+            )
+    
+    # 5. Análisis por categoría ATC
+    st.subheader("🏥 Analysis by ATC Category")
+    
+    # Mapear códigos ATC a categorías
+    ATC_CATEGORIES = {
+        'A': 'Alimentary Tract',
+        'B': 'Blood',
+        'C': 'Cardiovascular',
+        'D': 'Dermatologicals',
+        'G': 'Genito Urinary',
+        'H': 'Hormones',
+        'J': 'Antiinfectives',
+        'L': 'Antineoplastic',
+        'M': 'Musculoskeletal',
+        'N': 'Nervous System',
+        'P': 'Antiparasitic',
+        'R': 'Respiratory',
+        'S': 'Sensory Organs',
+        'V': 'Various'
+    }
+    
+    # Contar fármacos por categoría
+    categorias_count = {}
+    for atc in atc_codes:
+        if atc and len(atc) > 0:
+            cat = atc[0]
+            categorias_count[ATC_CATEGORIES.get(cat, 'Other')] = \
+                categorias_count.get(ATC_CATEGORIES.get(cat, 'Other'), 0) + 1
+    
+    if categorias_count:
+        import plotly.express as px
+        cats_df = pd.DataFrame(
+            categorias_count.items(),
+            columns=['Category', 'Count']
+        ).sort_values('Count', ascending=False)
+        
+        fig = px.bar(
+            cats_df,
+            x='Category',
+            y='Count',
+            title=f"Essential Drugs by Category in {pais}",
+            color='Count',
+            color_continuous_scale='Blues'
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+def mostrar_comparacion_paises(dd_df, essentials_df, paises):
+    """Comparar múltiples países"""
+    
+    st.header("📊 Country Comparison")
+    
+    # Recopilar datos para cada país
+    comparacion_data = []
+    
+    for pais in paises:
+        filtered_df, farmacos_esenciales, atc_codes = procesar_pais(dd_df, essentials_df, pais)
+        
+        comparacion_data.append({
+            'Country': pais,
+            'Essential Drugs': len(farmacos_esenciales),
+            'ATC Codes': len(atc_codes),
+            'Total Interactions': len(filtered_df),
+            'High Risk Interactions': len(filtered_df[filtered_df['Y'] >= 3]) if not filtered_df.empty else 0
+        })
+    
+    comparacion_df = pd.DataFrame(comparacion_data)
+    
+    # Mostrar tabla comparativa
+    st.dataframe(
+        comparacion_df,
+        use_container_width=True,
+        hide_index=True
+    )
+    
+    # Gráfico comparativo
+    import plotly.express as px
+    
+    fig = px.bar(
+        comparacion_df,
+        x='Country',
+        y=['Essential Drugs', 'Total Interactions', 'High Risk Interactions'],
+        title="Country Comparison",
+        barmode='group'
+    )
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Matriz de similitud
+    st.subheader("Similarity between Countries")
+    
+    # Calcular similitud de Jaccard
+    similarity_matrix = []
+    for i, pais1 in enumerate(paises):
+        row = []
+        farmacos1 = set(essentials_df[essentials_df[pais1] == 1]['Medicine'].tolist())
+        
+        for j, pais2 in enumerate(paises):
+            farmacos2 = set(essentials_df[essentials_df[pais2] == 1]['Medicine'].tolist())
+            
+            if len(farmacos1.union(farmacos2)) > 0:
+                similitud = len(farmacos1.intersection(farmacos2)) / len(farmacos1.union(farmacos2))
+            else:
+                similitud = 0
+            
+            row.append(similitud)
+        similarity_matrix.append(row)
+    
+    # Mostrar matriz de similitud
+    import plotly.graph_objects as go
+    
+    fig = go.Figure(data=go.Heatmap(
+        z=similarity_matrix,
+        x=paises,
+        y=paises,
+        colorscale='Blues',
+        text=[[f"{val:.2f}" for val in row] for row in similarity_matrix],
+        texttemplate="%{text}",
+        textfont={"size": 10}
+    ))
+    
+    fig.update_layout(
+        title="Drug List Similarity (Jaccard Index)",
+        xaxis_title="Country",
+        yaxis_title="Country"
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
+
+
+
+
+
+
+
+
 
 
    
@@ -713,9 +1045,10 @@ def pestaña_significado_y():
 
 def main():
     # Crear pestañas de navegación
-    tab2, tab3 = st.tabs([
+    tab2, tab3, tab4 = st.tabs([
 
         "Network interactions Visualization", 
+        "Essential Drugs by Country",
         "Y dataset"
     ])
     
@@ -725,7 +1058,8 @@ def main():
         pestaña_visualizacion()
     
     with tab3:
+        pestaña_esenciales()
+    with tab4:
         pestaña_significado_y()
-
 if __name__ == "__main__":
     main()
