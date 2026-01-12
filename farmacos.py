@@ -12,7 +12,7 @@ st.set_page_config(layout="wide")
 # Cargar datos
 @st.cache_data
 def load_data():
-    return pd.read_csv(r"DDIBUENO.csv")
+    return pd.read_csv(r"C:\Users\edjom\OneDrive\Escritorio\TherapeuticDataCommons\DDIBUENO.csv")
 
 df = load_data()
 
@@ -153,7 +153,7 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
             ),
             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
             yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            plot_bgcolor='white',
+            plot_bgcolor='black',
             height=600,
             width=800
         )
@@ -189,7 +189,7 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
             ),
             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
             yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            plot_bgcolor='white',
+            plot_bgcolor='black',
             height=600,
             width=800
         )
@@ -291,7 +291,7 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
         text=edge_texts,
         mode='lines',
         name='Interactions',
-        hoverlabel=dict(bgcolor='white', font_size=12)
+        hoverlabel=dict(bgcolor='black', font_size=12)
     )
     
     node_trace = go.Scatter(
@@ -308,7 +308,7 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
             line=dict(width=1, color='black')
         ),
         name='Drugs',
-        hoverlabel=dict(bgcolor='white', font_size=12)
+        hoverlabel=dict(bgcolor='black', font_size=12)
     )
     
     # Título basado en si hay fármaco principal o no
@@ -339,7 +339,7 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
                            zeroline=False, 
                            showticklabels=False
                        ),
-                       plot_bgcolor='white',
+                       plot_bgcolor='black',
                        height=600,
                        width=800,
                        dragmode='pan'
