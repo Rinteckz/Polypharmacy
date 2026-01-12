@@ -24,7 +24,7 @@ meeaning_y=load_data2()
 # Cargar datos de fármacos esenciales
 @st.cache_data
 def load_essential_drugs():
-    import openpyxl
+    
     essentials_df = pd.read_csv(r"farmacos_esenciales.csv")
     return essentials_df
     
