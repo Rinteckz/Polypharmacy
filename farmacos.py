@@ -6,10 +6,8 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-# Configuración de Streamlit
 st.set_page_config(layout="wide")
 
-# Cargar datos
 @st.cache_data
 def load_data():
     return pd.read_csv(r"DDIBUENO.csv")
@@ -17,20 +15,20 @@ def load_data():
 df = load_data()
 
 ATC_CATEGORIES = {
-    'A': 'Alimentary tract',
-    'B': 'Blood organs',
-    'C': 'Cardiovascular',
-    'D': 'Dermatologicals',
-    'G': 'Genito-urinary',
-    'H': 'Hormonal',
-    'J': 'Anti-infectives',
-    'L': 'Antineoplastic',
-    'M': 'Musculo-skeletal',
-    'N': 'Nervous system',
-    'P': 'Antiparasitic',
-    'R': 'Respiratory',
-    'S': 'Sensory organs',
-    'V': 'Various',
+    'A': 'ALIMENTARY TRACT AND METABOLISM',
+    'B': 'BLOOD AND BLOOD FORMING ORGANS',
+    'C': 'CARDIOVASCULAR SYSTEM',
+    'D': 'DERMATOLOGICALS',
+    'G': 'GENITO URINARY SYSTEM AND SEX HORMONES',
+    'H': 'SYSTEMIC HORMONAL PREPARATIONS, EXCL. SEX HORMONES AND INSULINS',
+    'J': 'ANTIINFECTIVES FOR SYSTEMIC USE',
+    'L': 'ANTINEOPLASTIC AND IMMUNOMODULATING AGENTS',
+    'M': 'MUSCULO-SKELETAL SYSTEM',
+    'N': 'NERVOUS SYSTEM',
+    'P': ' ANTIPARASITIC PRODUCTS, INSECTICIDES AND REPELLENTS',
+    'R': 'RESPIRATORY SYSTEM',
+    'S': 'SENSORY ORGANS',
+    'V': 'VARIOUS',
     'Sin ATC': 'No ATC',
     'Multi ATC': 'Multi ATC'
 }
@@ -574,7 +572,5 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
 
 
