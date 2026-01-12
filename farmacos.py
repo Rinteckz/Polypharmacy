@@ -47,7 +47,6 @@ ATC_CATEGORIES = {
     'Multi ATC': 'Multi ATC'
 }
 
-# Colores para cada categoría ATC
 ATC_COLORS = {
     'A': '#FF6B35',
     'B': '#004E89',
@@ -578,7 +577,7 @@ def pestaña_visualizacion():
             with col1:
                 st.metric("Total Drugs in Dataset", len(G_completo.nodes()))
             with col2:
-                st.metric("Total Interactions", len(G_completo.edges()))
+                st.metric("Total Interactions 191808")
             
             category_counts = Counter()
             for node in G_completo.nodes():
@@ -745,7 +744,6 @@ def pestaña_esenciales():
         st.info(f"No essential drugs found for {pais_seleccionado}")
         return
     
-    # Mostrar estadísticas iniciales
     st.subheader(f"Statistics for {pais_seleccionado}")
     
     col1, col2, col3 = st.columns(3)
@@ -821,7 +819,7 @@ def pestaña_esenciales():
     
     # Crear DataFrame
     if not farmacos_esenciales_lista:
-        st.info(f"No essential drugs from {pais_seleccionado} found in DDIBUENO database")
+        st.info(f"No essential drugs from {pais_seleccionado} found in DDI database")
         return
     
     df_farmacos_esenciales = pd.DataFrame(farmacos_esenciales_lista)
@@ -862,9 +860,7 @@ def pestaña_esenciales():
         unique_drugs = set(df_farmacos_esenciales['Common_Name'])
         st.metric("Unique Drug Names", len(unique_drugs))
     
-    # =============================================================
-    # PASO 5: Mostrar distribución por grupo ATC
-    # =============================================================
+    
     st.subheader("Distribution by ATC Group")
     
     def extraer_grupo_atc(atc_code):
@@ -876,25 +872,24 @@ def pestaña_esenciales():
     
     df_farmacos_esenciales['ATC_Group'] = df_farmacos_esenciales['ATC_Code'].apply(extraer_grupo_atc)
     
-    # Diccionario de nombres de grupos ATC
     ATC_GROUP_NAMES = {
-        'A': 'Alimentary Tract',
-        'B': 'Blood',
-        'C': 'Cardiovascular',
-        'D': 'Dermatologicals',
-        'G': 'Genito Urinary',
-        'H': 'Hormones',
-        'J': 'Antiinfectives',
-        'L': 'Antineoplastic',
-        'M': 'Musculoskeletal',
-        'N': 'Nervous System',
-        'P': 'Antiparasitic',
-        'R': 'Respiratory',
-        'S': 'Sensory Organs',
-        'V': 'Various',
-        'Sin ATC': 'No ATC',
-        'Unknown': 'Unknown'
-    }
+    'A': 'ALIMENTARY TRACT AND METABOLISM',
+    'B': 'BLOOD AND BLOOD FORMING ORGANS',
+    'C': 'CARDIOVASCULAR SYSTEM',
+    'D': 'DERMATOLOGICALS',
+    'G': 'GENITO URINARY SYSTEM AND SEX HORMONES',
+    'H': 'SYSTEMIC HORMONAL PREPARATIONS, EXCL. SEX HORMONES AND INSULINS',
+    'J': 'ANTIINFECTIVES FOR SYSTEMIC USE',
+    'L': 'ANTINEOPLASTIC AND IMMUNOMODULATING AGENTS',
+    'M': 'MUSCULO-SKELETAL SYSTEM',
+    'N': 'NERVOUS SYSTEM',
+    'P': 'ANTIPARASITIC PRODUCTS, INSECTICIDES AND REPELLENTS',
+    'R': 'RESPIRATORY SYSTEM',
+    'S': 'SENSORY ORGANS',
+    'V': 'VARIOUS',
+    'Sin ATC': 'No ATC',
+    'Multi ATC': 'Multi ATC'
+}
     
     # Crear DataFrame para distribución
     distribucion = df_farmacos_esenciales['ATC_Group'].value_counts().reset_index()
@@ -921,15 +916,11 @@ def pestaña_esenciales():
             hide_index=True
         )
     
-    # =============================================================
-    # PASO 6: Mostrar interacciones de estos fármacos
-    # =============================================================
+    
     st.subheader("Interactions Involving Essential Drugs")
     
-    # Encontrar todas las interacciones que involucran fármacos esenciales
     essential_drugs_names = set(df_farmacos_esenciales['Common_Name'])
     
-    # Filtrar interacciones donde al menos uno de los fármacos es esencial
     essential_interactions = df[
         df['Common_name_x'].isin(essential_drugs_names) | 
         df['Common_name_y'].isin(essential_drugs_names)
@@ -938,7 +929,6 @@ def pestaña_esenciales():
     if not essential_interactions.empty:
         st.write(f"**Found {len(essential_interactions)} interactions involving essential drugs**")
         
-        # Mostrar tabla de interacciones
         with st.expander("View All Interactions", expanded=False):
             st.dataframe(
                 essential_interactions[['Common_name_x', 'Common_name_y', 'Y', 'atc_code_x', 'atc_code_y']].rename(
@@ -954,7 +944,6 @@ def pestaña_esenciales():
                 hide_index=True
             )
         
-        # Análisis de severidad
         st.write("**Severity Analysis (Y Values):**")
         
         y_counts = essential_interactions['Y'].value_counts().sort_index()
@@ -1006,17 +995,21 @@ def pestaña_esenciales():
         st.info("No interactions found involving these essential drugs")
     
 
-
-
-
+def about():
+    st.title("About this web page")
+    st.write("This application has been developed to visualize drug-drug interactions using network graphs. It allows user to navigate trhough a large dataset of drugs and their interactions.")
+    st.write("We showcase essential drugs as defined by the World Healt Organization (WHO) and compare them with the dataset DDI, to identify which essential drugs have kwon interactions.")
+    st.write("The DDI dataset was obtained from  <a href='https://tdcommons.ai/'>Therapeutic data commons</a>")
+    st.write("The essential drug list was obtained from <a href='https://pmc.ncbi.nlm.nih.gov/articles/PMC6560372/pdf/BLT.18.222448.pdf'> Comparison of essential medicines lists in 137 countries </a>")
 
 def main():
     # Crear pestañas de navegación
-    tab1, tab2, tab3 = st.tabs([
+    tab1, tab2, tab3, tab4 = st.tabs([
 
         "Network interactions Visualization", 
         "Essentials",
-        "Y dataset"
+        "Y dataset",
+        "About"
     ])
     
     
@@ -1027,6 +1020,8 @@ def main():
         pestaña_esenciales()
     with tab3:
         pestaña_significado_y()
+    with tab4:
+        about()
 
 if __name__ == "__main__":
     main()
