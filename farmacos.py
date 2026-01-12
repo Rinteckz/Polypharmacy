@@ -629,7 +629,7 @@ def pestaña_visualizacion():
                             unsafe_allow_html=True
                         )
 
-def pestaña_informacion():
+
     """Pestaña de información del programa"""
     st.title("📋 Información del Programa")
     
@@ -887,13 +887,12 @@ def pestaña_significado_y():
 def main():
     # Crear pestañas de navegación
     tab1, tab2, tab3 = st.tabs([
-        "📋 Información del Programa", 
-        "🔍 Visualización de Interacciones", 
-        "📊 Significado de las Y"
+
+        "Network interactions Visualization", 
+        "Y dataset"
     ])
     
-    with tab1:
-        pestaña_informacion()
+    
     
     with tab2:
         pestaña_visualizacion()
