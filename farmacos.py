@@ -1,3 +1,4 @@
+
 import networkx as nx
 import plotly.graph_objects as go
 import plotly.express as px
@@ -571,7 +572,7 @@ def pestaña_visualizacion():
     
     # Verificar si hay algo para mostrar
     if not any(st.session_state.active_categories.values()) and not farmaco_principal:
-        st.info("👈 **Please select at least one ATC category from the sidebar to display drugs.**")
+        st.info("slec at least one ATC category from the sidebar to display drugs.**")
         
         with st.expander("Dataset Statistics", expanded=True):
             col1, col2 = st.columns(2)
@@ -712,7 +713,7 @@ def pestaña_significado_y():
 def pestaña_esenciales():
     """Pestaña simple para fármacos esenciales"""
     
-    st.title("🌍 Essential Drugs")
+    st.title("Essential Drugs By WHO")
     
     # Cargar datos
     essentials_df = load_essential_drugs()
@@ -752,57 +753,9 @@ def pestaña_esenciales():
     with col1:
         st.metric("Total Essential Drugs", len(farmacos_pais))
     
-    # =============================================================
-    # PASO 1: Obtener todos los códigos ATC esenciales (como tu código)
-    # =============================================================
-    codigos_atc_esenciales = set()
     
-    # Agregar códigos ATC primarios
-    codigos_atc_esenciales.update(farmacos_pais['ATC code primary'].dropna().unique())
     
-    # Agregar códigos ATC secundarios
-    for codigos in farmacos_pais['ATC code secondary'].dropna():
-        if isinstance(codigos, str):
-            if '|' in codigos:
-                for codigo in codigos.split('|'):
-                    codigos_atc_esenciales.add(codigo.strip())
-            else:
-                codigos_atc_esenciales.add(codigos.strip())
     
-    # Limpiar espacios en blanco
-    codigos_atc_esenciales = {codigo.strip() for codigo in codigos_atc_esenciales 
-                              if pd.notna(codigo) and codigo.strip() != ''}
-    
-    with col2:
-        st.metric("Unique ATC Codes", len(codigos_atc_esenciales))
-    
-    # =============================================================
-    # PASO 2: Verificar fármacos en DDIBUENO (como tu código)
-    # =============================================================
-    def verificar_farmaco(atc_code, num_atc):
-        if pd.isna(atc_code) or atc_code == 'No ATC' or num_atc == 0:
-            return False
-        
-        if '|' in str(atc_code):
-            codigos = [c.strip() for c in str(atc_code).split('|')]
-            return any(codigo in codigos_atc_esenciales for codigo in codigos)
-        else:
-            return str(atc_code).strip() in codigos_atc_esenciales
-    
-    # Aplicar verificación a ambas columnas
-    df['esencial_x'] = df.apply(lambda row: verificar_farmaco(row['atc_code_x'], row['num_atc_x']), axis=1)
-    df['esencial_y'] = df.apply(lambda row: verificar_farmaco(row['atc_code_y'], row['num_atc_y']), axis=1)
-    
-    # Contar cuántos son esenciales
-    esencial_x_count = df['esencial_x'].sum()
-    esencial_y_count = df['esencial_y'].sum()
-    
-    with col3:
-        st.metric("Drugs in DDIBUENO", esencial_x_count + esencial_y_count)
-    
-    # =============================================================
-    # PASO 3: Crear lista de fármacos esenciales encontrados
-    # =============================================================
     farmacos_esenciales_lista = []
     
     # Procesar fármacos de la columna X
@@ -817,7 +770,6 @@ def pestaña_esenciales():
             'Y_Value': row['Y']
         })
     
-    # Procesar fármacos de la columna Y
     for idx, row in df[df['esencial_y']].iterrows():
         farmacos_esenciales_lista.append({
             'Common_Name': row['Common_name_y'],
@@ -842,9 +794,7 @@ def pestaña_esenciales():
     # Ordenar por nombre
     df_farmacos_esenciales = df_farmacos_esenciales.sort_values('Common_Name')
     
-    # =============================================================
-    # PASO 4: Mostrar resultados principales
-    # =============================================================
+    
     st.subheader(f"Essential Drugs from {pais_seleccionado} found in DDIBUENO")
     
     # Mostrar tabla principal
@@ -1017,33 +967,9 @@ def pestaña_esenciales():
     else:
         st.info("No interactions found involving these essential drugs")
     
-    # =============================================================
-    # PASO 7: Opción para descargar datos
-    # =============================================================
-    st.subheader("Download Data")
     
-    col1, col2 = st.columns(2)
     
-    with col1:
-        # Descargar lista de fármacos esenciales
-        csv_farmacos = df_farmacos_esenciales.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="📥 Download Essential Drugs List",
-            data=csv_farmacos,
-            file_name=f"essential_drugs_{pais_seleccionado}.csv",
-            mime="text/csv"
-        )
     
-    with col2:
-        if not essential_interactions.empty:
-            # Descargar interacciones
-            csv_interacciones = essential_interactions.to_csv(index=False).encode('utf-8')
-            st.download_button(
-                label="📥 Download Interactions",
-                data=csv_interacciones,
-                file_name=f"essential_interactions_{pais_seleccionado}.csv",
-                mime="text/csv"
-            )
 
 
 
