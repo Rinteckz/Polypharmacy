@@ -576,7 +576,7 @@ def pestaña_visualizacion():
             with col1:
                 st.metric("Total Drugs in Dataset", len(G_completo.nodes()))
             with col2:
-                st.write("Total Interactions 191808")
+                st.mwtric("Total Interactions","191808")
             
             category_counts = Counter()
             for node in G_completo.nodes():
