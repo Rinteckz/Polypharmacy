@@ -1,4 +1,4 @@
-quiero que a este codigo le añadas otra seccion donde tenga estadisticas, pero que sea como en otra pagina import networkx as nx
+import networkx as nx
 import plotly.graph_objects as go
 import plotly.express as px
 from collections import Counter
