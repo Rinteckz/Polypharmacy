@@ -383,10 +383,16 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
         interacciones_df = interacciones_df.sort_values('Y Value')
         
         # Agregar colores según valor Y
+        def color_y_value(val):
+            
+         return ''
         
+        styled_df = interacciones_df.style.applymap(
+            color_y_value, subset=['Y Value']
+        )
         
         st.dataframe(
-            
+            styled_df,
             use_container_width=True,
             column_config={
                 "From": st.column_config.TextColumn("From (Drug A)", width="medium"),
@@ -665,5 +671,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
