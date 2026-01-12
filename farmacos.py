@@ -77,13 +77,20 @@ def get_atc_letter_from_category(category_name):
     """Obtener la letra ATC a partir del nombre completo de la categoría"""
     # Buscar en el diccionario ATC_CATEGORIES
     for letter, name in ATC_CATEGORIES.items():
-        if name == category_name:
+        if name.upper() == category_name.upper():
             return letter
-    # Para categorías especiales
-    if category_name == 'Sin ATC':
+    # Para categorías especiales (comparación case-insensitive)
+    if category_name.upper() == 'NO ATC' or category_name == 'Sin ATC':
         return 'Sin ATC'
-    elif category_name == 'Multi ATC':
+    elif category_name.upper() == 'MULTI ATC' or category_name == 'Multi ATC':
         return 'Multi ATC'
+    
+    # Si no encuentra, intentar extraer la primera letra si parece un código ATC
+    if len(category_name) > 0:
+        first_char = category_name[0].upper()
+        if first_char in ATC_CATEGORIES:
+            return first_char
+    
     return None
 
 @st.cache_data
@@ -573,3 +580,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
