@@ -453,7 +453,8 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
         
         
 
-def main():
+def pestaña_visualizacion():
+    """Pestaña principal de visualización de interacciones"""
     st.title("Drug Interaction Network Visualization")
     
     # Inicializar estado de sesión
@@ -627,18 +628,278 @@ def main():
                             f"<span style='color:{color};'>●</span> {drug} ({category})",
                             unsafe_allow_html=True
                         )
+
+def pestaña_informacion():
+    """Pestaña de información del programa"""
+    st.title("📋 Información del Programa")
     
-    # Información adicional
-    st.markdown("---")
-    st.markdown("**How to use:**")
-    st.markdown("""
-    1. **Select a main drug** (optional) to focus on its interactions
-    2. **Select ATC categories** to filter drugs by therapeutic category
-    3. **View network visualization** showing drug interactions
-    4. **Check Interaction Analysis section** for detailed Y values
-    5. **Y values** represent the effect of Drug A on Drug B (view page ASADSDAD)
-    6. **Use mouse** to pan and zoom the graph
+    st.header("Descripción General")
+    st.write("""
+    Esta aplicación web permite visualizar y analizar interacciones entre fármacos utilizando 
+    técnicas de análisis de redes y visualización de grafos.
     """)
+    
+    st.header("Objetivos del Programa")
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.info("**Visualización**")
+        st.write("Mostrar interacciones farmacológicas de forma intuitiva mediante grafos.")
+    
+    with col2:
+        st.info("**Análisis**")
+        st.write("Analizar patrones de interacción y categorías terapéuticas.")
+    
+    with col3:
+        st.info("**Exploración**")
+        st.write("Facilitar la exploración interactiva de datos farmacológicos.")
+    
+    st.header("Características Principales")
+    
+    st.subheader("1. Visualización de Redes")
+    st.write("""
+    - **Grafos interactivos**: Nodos representan fármacos, aristas representan interacciones
+    - **Colores por categoría ATC**: Cada categoría terapéutica tiene un color distintivo
+    - **Zoom y panorámica**: Navegación fluida en la visualización
+    - **Tooltips informativos**: Información detallada al pasar el cursor
+    """)
+    
+    st.subheader("2. Sistema de Filtrado")
+    st.write("""
+    - **Filtro por fármaco principal**: Enfocarse en un fármaco específico
+    - **Filtro por categoría ATC**: Seleccionar categorías terapéuticas de interés
+    - **Selección múltiple**: Combinar diferentes filtros
+    """)
+    
+    st.subheader("3. Análisis de Datos")
+    st.write("""
+    - **Estadísticas descriptivas**: Conteo de fármacos e interacciones
+    - **Distribución de valores Y**: Análisis de tipos de interacción
+    - **Tablas interactivas**: Visualización detallada de datos
+    """)
+    
+    st.header("Tecnologías Utilizadas")
+    
+    tech_cols = st.columns(4)
+    with tech_cols[0]:
+        st.metric("Streamlit", "Frontend")
+    with tech_cols[1]:
+        st.metric("Plotly", "Visualización")
+    with tech_cols[2]:
+        st.metric("NetworkX", "Grafos")
+    with tech_cols[3]:
+        st.metric("Pandas", "Datos")
+    
+    st.header("Fuente de Datos")
+    st.write("""
+    Los datos provienen del archivo `DDIBUENO.csv` que contiene información sobre:
+    - Nombres comunes de fármacos
+    - Códigos ATC (Anatomical Therapeutic Chemical)
+    - Tipos de interacciones (valores Y)
+    - Categorías terapéuticas
+    """)
+    
+    st.header("Cómo Usar la Aplicación")
+    st.write("""
+    1. **Navega a la pestaña 'Visualización de Interacciones'**
+    2. **Selecciona un fármaco principal** (opcional) en el sidebar
+    3. **Elige las categorías ATC** que deseas visualizar
+    4. **Explora el grafo** usando zoom y panorámica
+    5. **Consulta el análisis** de interacciones en la parte inferior
+    6. **Revisa el significado de los valores Y** en la pestaña correspondiente
+    """)
+    
+    st.header("Limitaciones")
+    st.warning("""
+    - Los datos deben estar en formato CSV con columnas específicas
+    - El rendimiento puede verse afectado con redes muy grandes
+    - La interpretación clínica requiere validación profesional
+    """)
+
+def pestaña_significado_y():
+    """Pestaña sobre el significado de los valores Y"""
+    st.title("📊 Significado de los Valores Y")
+    
+    st.header("Introducción")
+    st.write("""
+    Los valores **Y** en este dataset representan **tipos específicos de interacciones farmacológicas**.
+    Cada valor numérico tiene un significado particular que describe la naturaleza de la interacción
+    entre dos fármacos.
+    """)
+    
+    st.header("Interpretación de los Valores")
+    
+    # Definición de valores Y (puedes ajustar según tu dataset específico)
+    y_definitions = {
+        0: {
+            "nombre": "Sin Interacción Conocida",
+            "descripcion": "No se ha documentado interacción clínica significativa entre los fármacos",
+            "implicacion": "Pueden administrarse conjuntamente sin precauciones especiales",
+            "ejemplo": "Paracetamol y Vitaminas"
+        },
+        1: {
+            "nombre": "Interacción Leve",
+            "descripcion": "Interacción de baja significancia clínica",
+            "implicacion": "Monitorización ocasional recomendada",
+            "ejemplo": "Algunos antihistamínicos y antidepresivos"
+        },
+        2: {
+            "nombre": "Interacción Moderada",
+            "descripcion": "Interacción con efectos clínicos significativos",
+            "implicacion": "Ajuste de dosis o monitorización regular necesaria",
+            "ejemplo": "Warfarina y algunos antibióticos"
+        },
+        3: {
+            "nombre": "Interacción Grave",
+            "descripcion": "Interacción con riesgo importante para la salud",
+            "implicacion": "Evitar combinación o monitorización intensiva",
+            "ejemplo": "IMAOs y alimentos con tiramina"
+        },
+        4: {
+            "nombre": "Interacción Contraindicada",
+            "descripcion": "Combinación absolutamente contraindicada",
+            "implicacion": "Nunca administrar conjuntamente",
+            "ejemplo": "Cloranfenicol y fenobarbital en neonatos"
+        }
+    }
+    
+    # Mostrar tabla de definiciones
+    st.subheader("Tabla de Valores Y")
+    
+    # Crear DataFrame para la tabla
+    df_y = pd.DataFrame([
+        {
+            "Valor Y": y_val,
+            "Nombre": info["nombre"],
+            "Descripción": info["descripcion"],
+            "Implicación Clínica": info["implicacion"],
+            "Ejemplo": info["ejemplo"]
+        }
+        for y_val, info in y_definitions.items()
+    ])
+    
+    # Aplicar formato condicional
+    def color_row(val):
+        color_map = {
+            0: '#d4edda',  # Verde claro
+            1: '#fff3cd',  # Amarillo claro
+            2: '#ffeaa7',  # Amarillo
+            3: '#f8d7da',  # Rojo claro
+            4: '#dc3545'   # Rojo
+        }
+        return [f'background-color: {color_map.get(val, "white")}'] * 5
+    
+    styled_df = df_y.style.apply(lambda x: color_row(x['Valor Y']), axis=1)
+    
+    st.dataframe(
+        styled_df,
+        use_container_width=True,
+        hide_index=True,
+        column_order=["Valor Y", "Nombre", "Descripción", "Implicación Clínica", "Ejemplo"]
+    )
+    
+    st.header("Visualización de Distribución")
+    
+    # Crear gráfico de distribución
+    fig = go.Figure(data=[
+        go.Bar(
+            x=list(y_definitions.keys()),
+            y=[10, 25, 40, 20, 5],  # Valores de ejemplo - reemplazar con datos reales
+            text=[info["nombre"] for info in y_definitions.values()],
+            textposition='auto',
+            marker_color=['#28a745', '#ffc107', '#fd7e14', '#dc3545', '#721c24']
+        )
+    ])
+    
+    fig.update_layout(
+        title="Distribución Ejemplar de Valores Y",
+        xaxis_title="Valor Y",
+        yaxis_title="Frecuencia Relativa (%)",
+        template="plotly_white"
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
+    
+    st.header("Implicaciones Clínicas")
+    
+    cols = st.columns(3)
+    
+    with cols[0]:
+        st.info("**Valores 0-1**")
+        st.write("""
+        - **Bajo riesgo**
+        - Monitorización mínima
+        - Combinación generalmente segura
+        """)
+    
+    with cols[1]:
+        st.warning("**Valor 2**")
+        st.write("""
+        - **Riesgo moderado**
+        - Ajuste de dosis posible
+        - Monitorización recomendada
+        """)
+    
+    with cols[2]:
+        st.error("**Valores 3-4**")
+        st.write("""
+        - **Alto riesgo**
+        - Evitar combinación
+        - Monitorización intensiva si es esencial
+        """)
+    
+    st.header("Recomendaciones de Uso")
+    
+    st.write("""
+    1. **Interpretar en contexto**: Los valores Y deben considerarse junto con información clínica completa
+    2. **Verificar fuentes**: Confirmar con literatura farmacológica actualizada
+    3. **Considerar individualidad**: Factores del paciente pueden modificar el riesgo
+    4. **Consultar especialistas**: En caso de duda, consultar con farmacólogo clínico
+    """)
+    
+    st.header("Ejemplos Prácticos")
+    
+    with st.expander("Ejemplo 1: Paciente con múltiples comorbilidades", expanded=False):
+        st.write("""
+        **Situación**: Paciente diabético hipertenso con infección
+        - Fármaco A: Metformina (Y=0 con la mayoría)
+        - Fármaco B: Enalapril (Y=1 con algunos antibióticos)
+        - Fármaco C: Amoxicilina (Y=2 con anticoagulantes)
+        
+        **Análisis**: 
+        - Metformina + Enalapril: Seguro (Y=0)
+        - Enalapril + Amoxicilina: Monitorizar función renal (Y=1)
+        - No hay interacciones graves en este caso
+        """)
+    
+    with st.expander("Ejemplo 2: Combinación de riesgo", expanded=False):
+        st.write("""
+        **Situación**: Paciente con depresión y dolor crónico
+        - Fármaco A: Fluoxetina (ISRS)
+        - Fármaco B: Tramadol (opioide)
+        
+        **Análisis**:
+        - Y=3 (Interacción grave)
+        - Riesgo de síndrome serotoninérgico
+        - **Recomendación**: Evitar combinación o usar dosis mínimas con monitorización estrecha
+        """)
+
+def main():
+    # Crear pestañas de navegación
+    tab1, tab2, tab3 = st.tabs([
+        "📋 Información del Programa", 
+        "🔍 Visualización de Interacciones", 
+        "📊 Significado de las Y"
+    ])
+    
+    with tab1:
+        pestaña_informacion()
+    
+    with tab2:
+        pestaña_visualizacion()
+    
+    with tab3:
+        pestaña_significado_y()
 
 if __name__ == "__main__":
     main()
