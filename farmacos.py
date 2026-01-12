@@ -855,9 +855,9 @@ def pestaña_esenciales():
         st.metric("From Column X", len(df_farmacos_esenciales[df_farmacos_esenciales['Source'] == 'Column X']))
     with col3:
         st.metric("From Column Y", len(df_farmacos_esenciales[df_farmacos_esenciales['Source'] == 'Column Y']))
-    with col4:
-        unique_drugs = set(df_farmacos_esenciales['Common_Name'])
-        st.metric("Unique Drug Names", len(unique_drugs))
+    #with col4:
+       # unique_drugs = set(df_farmacos_esenciales['Common_Name'])
+        #st.metric("Unique Drug Names", len(unique_drugs))
     
     
     st.subheader("Distribution by ATC Group")
