@@ -12,7 +12,7 @@ st.set_page_config(layout="wide")
 # Cargar datos
 @st.cache_data
 def load_data():
-    return pd.read_csv(r"DDIBUENO.csv")
+    return pd.read_csv(r"C:\Users\edjom\OneDrive\Escritorio\TherapeuticDataCommons\DDIBUENO.csv")
 
 df = load_data()
 
@@ -456,7 +456,7 @@ def main():
             with col1:
                 st.metric("Total Drugs in Dataset", len(G_completo.nodes()))
             with col2:
-                st.metric("Total Interactions: 191808")
+                st.metric("Total Interactions", len(G_completo.edges()))
             
             # Mostrar distribución de categorías
             category_counts = Counter()
@@ -542,6 +542,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
 
