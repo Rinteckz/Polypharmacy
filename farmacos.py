@@ -554,15 +554,15 @@ def pestaña_visualizacion():
        # with col2:
         #    deselect_all_clicked = st.button("Deselect All", use_container_width=True, key="deselect_all_btn")
         
-        if select_all_clicked:
-            for category in category_list:
-                st.session_state.active_categories[category] = True
-            st.rerun()
+        #if select_all_clicked:
+           # for category in category_list:
+            #    st.session_state.active_categories[category] = True
+           # st.rerun()
         
-        if deselect_all_clicked:
-            for category in category_list:
-                st.session_state.active_categories[category] = False
-            st.rerun()
+        #if deselect_all_clicked:
+          #  for category in category_list:
+           #     st.session_state.active_categories[category] = False
+           # st.rerun()
     
     # Área principal
     st.subheader("Network Visualization")
