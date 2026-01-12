@@ -6,8 +6,10 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
+# Configuración de Streamlit
 st.set_page_config(layout="wide")
 
+# Cargar datos
 @st.cache_data
 def load_data():
     return pd.read_csv(r"DDIBUENO.csv")
@@ -15,24 +17,23 @@ def load_data():
 df = load_data()
 
 ATC_CATEGORIES = {
-    'A': 'ALIMENTARY TRACT AND METABOLISM',
-    'B': 'BLOOD AND BLOOD FORMING ORGANS',
-    'C': 'CARDIOVASCULAR SYSTEM',
-    'D': 'DERMATOLOGICALS',
-    'G': 'GENITO URINARY SYSTEM AND SEX HORMONES',
-    'H': 'SYSTEMIC HORMONAL PREPARATIONS, EXCL. SEX HORMONES AND INSULINS',
-    'J': 'ANTIINFECTIVES FOR SYSTEMIC USE',
-    'L': 'ANTINEOPLASTIC AND IMMUNOMODULATING AGENTS',
-    'M': 'MUSCULO-SKELETAL SYSTEM',
-    'N': 'NERVOUS SYSTEM',
-    'P': 'ANTIPARASITIC PRODUCTS, INSECTICIDES AND REPELLENTS',
-    'R': 'RESPIRATORY SYSTEM',
-    'S': 'SENSORY ORGANS',
-    'V': 'VARIOUS',
+    'A': 'Alimentary tract',
+    'B': 'Blood organs',
+    'C': 'Cardiovascular',
+    'D': 'Dermatologicals',
+    'G': 'Genito-urinary',
+    'H': 'Hormonal',
+    'J': 'Anti-infectives',
+    'L': 'Antineoplastic',
+    'M': 'Musculo-skeletal',
+    'N': 'Nervous system',
+    'P': 'Antiparasitic',
+    'R': 'Respiratory',
+    'S': 'Sensory organs',
+    'V': 'Various',
     'Sin ATC': 'No ATC',
     'Multi ATC': 'Multi ATC'
 }
-
 
 # Colores para cada categoría ATC
 ATC_COLORS = {
@@ -71,27 +72,6 @@ def get_atc_color_and_category(atc_code, num_atc):
         return ATC_COLORS['Multi ATC'], 'Multi ATC'
     
     return ATC_COLORS.get(first_char, '#CCCCCC'), ATC_CATEGORIES.get(first_char, 'Unknown')
-
-# FUNCIÓN NUEVA PARA OBTENER LA LETRA ATC DEL NOMBRE DE CATEGORÍA
-def get_atc_letter_from_category(category_name):
-    """Obtener la letra ATC a partir del nombre completo de la categoría"""
-    # Buscar en el diccionario ATC_CATEGORIES
-    for letter, name in ATC_CATEGORIES.items():
-        if name.upper() == category_name.upper():
-            return letter
-    # Para categorías especiales (comparación case-insensitive)
-    if category_name.upper() == 'NO ATC' or category_name == 'Sin ATC':
-        return 'Sin ATC'
-    elif category_name.upper() == 'MULTI ATC' or category_name == 'Multi ATC':
-        return 'Multi ATC'
-    
-    # Si no encuentra, intentar extraer la primera letra si parece un código ATC
-    if len(category_name) > 0:
-        first_char = category_name[0].upper()
-        if first_char in ATC_CATEGORIES:
-            return first_char
-    
-    return None
 
 @st.cache_data
 def crear_grafo_completo(df):
@@ -440,14 +420,12 @@ def main():
                 st.session_state.active_categories[category] = checked
             
             with col2:
-                # Mostrar categoría con color y contador - CAMBIADO
-                # Obtener la letra ATC correspondiente
-                atc_letter = get_atc_letter_from_category(category)
-                if atc_letter:
-                    color = ATC_COLORS.get(atc_letter, '#CCCCCC')
-                else:
-                    color = '#CCCCCC'
-                
+                # Mostrar categoría con color y contador
+                color = ATC_COLORS.get(
+                    category if category in ATC_COLORS else category[0],
+                    '#CCCCCC'
+                )
+
                 st.markdown(
                     f"<span style='color:{color}; font-weight:bold;'>■</span> "
                     f"{category} ({count})",
@@ -491,13 +469,7 @@ def main():
             
             st.write("**Drugs by ATC Category:**")
             for category, count in sorted(category_counts.items()):
-                # CAMBIADO: Obtener la letra ATC y luego el color
-                atc_letter = get_atc_letter_from_category(category)
-                if atc_letter:
-                    color = ATC_COLORS.get(atc_letter, '#CCCCCC')
-                else:
-                    color = '#CCCCCC'
-                
+                color = ATC_COLORS.get(category[:1], ATC_COLORS.get(category, '#CCCCCC'))
                 st.markdown(
                     f"<span style='color:{color}; font-weight:bold;'>■</span> "
                     f"{category}: {count} drugs",
@@ -537,13 +509,7 @@ def main():
                 
                 if category_counts:
                     for category, count in sorted(category_counts.items()):
-                        # CAMBIADO: Obtener la letra ATC y luego el color
-                        atc_letter = get_atc_letter_from_category(category)
-                        if atc_letter:
-                            color = ATC_COLORS.get(atc_letter, '#CCCCCC')
-                        else:
-                            color = '#CCCCCC'
-                        
+                        color = ATC_COLORS.get(category[:1], ATC_COLORS.get(category, '#CCCCCC'))
                         st.markdown(
                             f"<span style='color:{color}; font-weight:bold;'>■</span> "
                             f"{category}: {count} drugs",
