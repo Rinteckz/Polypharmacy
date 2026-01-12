@@ -1,4 +1,4 @@
-import networkx as nx
+este codigo ya me gusta, pero ahora quiero agregar como otra pagina dentro del mismo como le hago, igual me gustaria que el codigo se hiciera en otro archivo de python para tener mas orden import networkx as nx
 import plotly.graph_objects as go
 import plotly.express as px
 from collections import Counter
