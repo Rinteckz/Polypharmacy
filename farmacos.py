@@ -125,8 +125,8 @@ def crear_grafo_completo(df):
                       tooltip=tooltip_info)
         
         if not G.has_edge(drug1, drug2):
-            interaction_desc = "Type 1" if interaction_type == 1 else "Type 2" if interaction_type == 2 else "Unknown"
-            edge_tooltip = f"<b>Direction:</b> {drug1} → {drug2}<br><b>Interaction Type:</b> {interaction_desc}<br><b>{drug1}</b> acts on <b>{drug2}</b>"
+            # CAMBIADO: Mostrar el valor exacto de 'Y'
+            edge_tooltip = f"<b>Direction:</b> {drug1} → {drug2}<br><b>Interaction Value (Y):</b> {interaction_type}<br><b>{drug1}</b> acts on <b>{drug2}</b>"
             G.add_edge(drug1, drug2, 
                       interaction_type=interaction_type,
                       tooltip=edge_tooltip)
@@ -323,9 +323,9 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
         edge_y.append(y1)
         edge_y.append(None)
         
-        # Información de tooltip
-        interaction_desc = "Type 1" if data.get('interaction_type', 0) == 1 else "Type 2" if data.get('interaction_type', 0) == 2 else "Unknown"
-        edge_tooltip = f"<b>Direction:</b> {u} → {v}<br><b>Type:</b> {interaction_desc}<br><b>{u}</b> acts on <b>{v}</b>"
+        # Información de tooltip - CAMBIADO: Mostrar el valor exacto de 'Y'
+        interaction_value = data.get('interaction_type', 'Unknown')
+        edge_tooltip = f"<b>Direction:</b> {u} → {v}<br><b>Interaction Value (Y):</b> {interaction_value}<br><b>{u}</b> acts on <b>{v}</b>"
         edge_texts.append(edge_tooltip)
     
     # Crear trazas de Plotly
@@ -581,10 +581,8 @@ def main():
                 st.metric("Displayed Interactions", len(G_filtrado.edges()))
             with col3:
                 if farmaco_principal:
-                    in_degree = G_filtrado.in_degree(farmaco_principal)
-                    out_degree = G_filtrado.out_degree(farmaco_principal)
-                    st.metric(f"Connections of {farmaco_principal}", 
-                             f"{in_degree} in, {out_degree} out")
+                    degree = G_filtrado.degree(farmaco_principal)
+                    st.metric(f"Connections of {farmaco_principal}", degree)
             
             # Mostrar detalles por categoría
             with st.expander("View details by category", expanded=False):
@@ -617,13 +615,6 @@ def main():
                 for drug in drugs_list:
                     if drug == farmaco_principal:
                         st.markdown(f"**🔵 {drug}** (Main drug)")
-                        # Mostrar conexiones del fármaco principal
-                        in_connections = list(G_filtrado.predecessors(drug))
-                        out_connections = list(G_filtrado.successors(drug))
-                        if in_connections:
-                            st.write(f"  ← **Receives from:** {', '.join(in_connections[:5])}{'...' if len(in_connections) > 5 else ''}")
-                        if out_connections:
-                            st.write(f"  → **Acts on:** {', '.join(out_connections[:5])}{'...' if len(out_connections) > 5 else ''}")
                     else:
                         category = G_filtrado.nodes[drug]['atc_category']
                         color = G_filtrado.nodes[drug]['color']
@@ -639,10 +630,11 @@ def main():
     1. **Select a main drug** (optional) from the dropdown to focus on its interactions
     2. **Select ATC categories** you want to visualize (all are deselected by default)
     3. **Use 'Select All' / 'Deselect All' buttons** for quick selection
-    4. **Hover over nodes** to see drug details
-    5. **Hover over edges** to see interaction details (shows direction: Drug A → Drug B)
+    4. **Hover over nodes** to see drug details (ATC code and category)
+    5. **Hover over edges** to see interaction details (shows direction and exact 'Y' value)
     6. **Arrows show direction**: Drug A → Drug B means Drug A acts on Drug B
-    7. **Use the mouse** to pan and zoom the graph
+    7. **'Y' value**: The exact number from the CSV column 'Y' for that interaction
+    8. **Use the mouse** to pan and zoom the graph
     """)
     
     # Leyenda de colores
@@ -659,8 +651,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
 
 
 
