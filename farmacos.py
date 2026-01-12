@@ -5,9 +5,10 @@ from collections import Counter
 import numpy as np
 import pandas as pd
 import streamlit as st
+from streamlit_option_menu import option_menu
 
 # Configuración de Streamlit
-st.set_page_config(layout="wide")
+st.set_page_config(layout="wide", page_title="Drug Interaction Network")
 
 # Cargar datos
 @st.cache_data
@@ -384,8 +385,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
         
         # Agregar colores según valor Y
         def color_y_value(val):
-            
-         return ''
+            return ''
         
         styled_df = interacciones_df.style.applymap(
             color_y_value, subset=['Y Value']
@@ -450,10 +450,233 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
         else:
             incoming_df = None
             st.write("No incoming interactions.")
-        
-        
 
-def main():
+def pagina_estadisticas():
+    """Página de estadísticas detalladas"""
+    st.title("📊 Detailed Statistics")
+    
+    # Cargar datos en caché si no están cargados
+    if 'G_completo' not in st.session_state:
+        with st.spinner("Loading data..."):
+            st.session_state.G_completo = crear_grafo_completo(df)
+    
+    G = st.session_state.G_completo
+    
+    # Estadísticas generales
+    st.header("General Statistics")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("Total Drugs", len(G.nodes()))
+    
+    with col2:
+        st.metric("Total Interactions", len(G.edges()))
+    
+    with col3:
+        avg_degree = sum(dict(G.degree()).values()) / len(G.nodes())
+        st.metric("Average Connections", f"{avg_degree:.2f}")
+    
+    with col4:
+        density = nx.density(G)
+        st.metric("Network Density", f"{density:.4f}")
+    
+    # Distribución de categorías ATC
+    st.header("ATC Category Distribution")
+    
+    category_counts = Counter()
+    for node in G.nodes():
+        category_counts[G.nodes[node]['atc_category']] += 1
+    
+    # Gráfico de barras
+    categories = list(category_counts.keys())
+    counts = list(category_counts.values())
+    
+    # Ordenar por cantidad
+    sorted_data = sorted(zip(categories, counts), key=lambda x: x[1], reverse=True)
+    categories_sorted = [item[0] for item in sorted_data]
+    counts_sorted = [item[1] for item in sorted_data]
+    
+    # Colores para el gráfico
+    bar_colors = []
+    for cat in categories_sorted:
+        atc_letter = get_atc_letter_from_category(cat)
+        bar_colors.append(ATC_COLORS.get(atc_letter, '#CCCCCC'))
+    
+    fig_bar = px.bar(
+        x=categories_sorted,
+        y=counts_sorted,
+        title="Number of Drugs by ATC Category",
+        labels={'x': 'ATC Category', 'y': 'Number of Drugs'},
+        color=bar_colors,
+        color_discrete_map="identity"
+    )
+    fig_bar.update_layout(xaxis_tickangle=-45)
+    st.plotly_chart(fig_bar, use_container_width=True)
+    
+    # Tabla detallada de categorías
+    with st.expander("View Detailed Category Table"):
+        category_data = []
+        for cat, count in sorted_data:
+            atc_letter = get_atc_letter_from_category(cat)
+            percentage = (count / len(G.nodes())) * 100
+            category_data.append({
+                'ATC Category': cat,
+                'ATC Code': atc_letter if atc_letter else 'N/A',
+                'Number of Drugs': count,
+                'Percentage': f"{percentage:.1f}%"
+            })
+        
+        category_df = pd.DataFrame(category_data)
+        st.dataframe(category_df, use_container_width=True)
+    
+    # Top 10 fármacos más conectados
+    st.header("Most Connected Drugs")
+    
+    degree_dict = dict(G.degree())
+    top_10 = sorted(degree_dict.items(), key=lambda x: x[1], reverse=True)[:10]
+    
+    drugs = [item[0] for item in top_10]
+    degrees = [item[1] for item in top_10]
+    
+    # Obtener categorías para colores
+    drug_colors = []
+    for drug in drugs:
+        category = G.nodes[drug]['atc_category']
+        atc_letter = get_atc_letter_from_category(category)
+        drug_colors.append(ATC_COLORS.get(atc_letter, '#CCCCCC'))
+    
+    fig_top = px.bar(
+        x=drugs,
+        y=degrees,
+        title="Top 10 Most Connected Drugs",
+        labels={'x': 'Drug', 'y': 'Number of Connections'},
+        color=drug_colors,
+        color_discrete_map="identity"
+    )
+    fig_top.update_layout(xaxis_tickangle=-45)
+    st.plotly_chart(fig_top, use_container_width=True)
+    
+    # Distribución de valores Y
+    st.header("Interaction Value (Y) Distribution")
+    
+    y_values = []
+    for _, _, data in G.edges(data=True):
+        y_values.append(data.get('interaction_type', 0))
+    
+    y_series = pd.Series(y_values)
+    y_counts = y_series.value_counts().sort_index()
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        fig_y = px.pie(
+            values=y_counts.values,
+            names=[f"Y = {k}" for k in y_counts.index],
+            title="Global Distribution of Y Values",
+            color_discrete_sequence=px.colors.sequential.RdBu
+        )
+        st.plotly_chart(fig_y, use_container_width=True)
+    
+    with col2:
+        st.write("**Statistics:**")
+        st.write(f"**Total Y values:** {len(y_values)}")
+        st.write(f"**Unique Y values:** {len(y_counts)}")
+        st.write(f"**Most common:** Y = {y_counts.idxmax()}")
+        st.write(f"**Average Y:** {y_series.mean():.2f}")
+        st.write(f"**Median Y:** {y_series.median():.2f}")
+    
+    # Estadísticas de distribución de grados
+    st.header("Connection Distribution")
+    
+    degrees = list(dict(G.degree()).values())
+    
+    fig_hist = px.histogram(
+        x=degrees,
+        nbins=30,
+        title="Distribution of Connections per Drug",
+        labels={'x': 'Number of Connections', 'y': 'Count'},
+        color_discrete_sequence=['#FF6B35']
+    )
+    st.plotly_chart(fig_hist, use_container_width=True)
+    
+    # Métricas de red
+    st.header("Network Metrics")
+    
+    try:
+        # Componentes conectados
+        undirected_G = G.to_undirected()
+        components = list(nx.connected_components(undirected_G))
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric("Connected Components", len(components))
+        
+        with col2:
+            largest_component = max(components, key=len)
+            st.metric("Largest Component", len(largest_component))
+        
+        with col3:
+            diameter = nx.diameter(undirected_G.subgraph(largest_component))
+            st.metric("Diameter", diameter)
+        
+        # Centralidad
+        st.subheader("Centrality Measures")
+        
+        # Calcular centralidad de grado
+        degree_centrality = nx.degree_centrality(G)
+        top_central = sorted(degree_centrality.items(), key=lambda x: x[1], reverse=True)[:5]
+        
+        st.write("**Top 5 Drugs by Degree Centrality:**")
+        for drug, centrality in top_central:
+            category = G.nodes[drug]['atc_category']
+            st.write(f"- **{drug}**: {centrality:.4f} ({category})")
+    
+    except Exception as e:
+        st.warning(f"Some network metrics could not be calculated: {str(e)}")
+    
+    # Exportar datos
+    st.header("Data Export")
+    
+    if st.button("Export Statistics to CSV"):
+        # Preparar datos para exportación
+        export_data = []
+        
+        # Datos de fármacos
+        for node in G.nodes():
+            export_data.append({
+                'Type': 'Drug',
+                'Name': node,
+                'ATC_Category': G.nodes[node]['atc_category'],
+                'ATC_Code': G.nodes[node]['atc_code'],
+                'Connections': G.degree(node)
+            })
+        
+        # Datos de interacciones
+        for u, v, data in G.edges(data=True):
+            export_data.append({
+                'Type': 'Interaction',
+                'From': u,
+                'To': v,
+                'Y_Value': data.get('interaction_type', 'N/A')
+            })
+        
+        export_df = pd.DataFrame(export_data)
+        
+        # Convertir a CSV
+        csv = export_df.to_csv(index=False)
+        
+        # Descargar
+        st.download_button(
+            label="Download CSV",
+            data=csv,
+            file_name="drug_network_statistics.csv",
+            mime="text/csv"
+        )
+
+def pagina_principal():
+    """Página principal con visualización de red"""
     st.title("Drug Interaction Network Visualization")
     
     # Inicializar estado de sesión
@@ -489,8 +712,6 @@ def main():
         else:
             farmaco_principal = None
             G_actual = G_completo
-        
-        
         
         # Obtener todas las categorías presentes en el grafo actual
         all_categories = set()
@@ -636,9 +857,40 @@ def main():
     2. **Select ATC categories** to filter drugs by therapeutic category
     3. **View network visualization** showing drug interactions
     4. **Check Interaction Analysis section** for detailed Y values
-    5. **Y values** represent the effect of Drug A on Drug B (view page ASADSDAD)
+    5. **Y values** represent the effect of Drug A on Drug B
     6. **Use mouse** to pan and zoom the graph
     """)
+
+def main():
+    """Función principal con navegación entre páginas"""
+    
+    # Menú de navegación en el sidebar
+    with st.sidebar:
+        st.markdown("---")
+        selected = option_menu(
+            menu_title="Navigation",
+            options=["Network Visualization", "Statistics"],
+            icons=["graph-up", "bar-chart-fill"],
+            menu_icon="menu-app",
+            default_index=0,
+            styles={
+                "container": {"padding": "0!important", "background-color": "#f0f2f6"},
+                "icon": {"color": "orange", "font-size": "20px"},
+                "nav-link": {
+                    "font-size": "16px",
+                    "text-align": "left",
+                    "margin": "0px",
+                    "--hover-color": "#eee",
+                },
+                "nav-link-selected": {"background-color": "#4CAF50"},
+            }
+        )
+    
+    # Mostrar la página seleccionada
+    if selected == "Network Visualization":
+        pagina_principal()
+    elif selected == "Statistics":
+        pagina_estadisticas()
 
 if __name__ == "__main__":
     main()
