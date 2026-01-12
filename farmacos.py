@@ -478,8 +478,7 @@ def pestaña_visualizacion():
     with st.sidebar:
         st.header("Controls")
         
-        # Opción para seleccionar fármaco principal
-        st.subheader("Select Main Drug (Optional)")
+        
         all_drugs = sorted(set(df['Common_name_x'].tolist() + df['Common_name_y'].tolist()))
         
         farmaco_principal_seleccionado = st.selectbox(
