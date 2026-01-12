@@ -465,7 +465,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
 
 def pestaña_visualizacion():
     """Pestaña principal de visualización de interacciones"""
-    st.title("Drug Interaction Network Visualization")
+    st.title("Drug-Drug Interaction Network Visualization")
     
     # Inicializar estado de sesión
     if 'G_completo' not in st.session_state:
