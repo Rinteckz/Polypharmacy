@@ -12,7 +12,7 @@ st.set_page_config(layout="wide")
 # Cargar datos
 @st.cache_data
 def load_data():
-    return pd.read_csv(r"C:\Users\edjom\OneDrive\Escritorio\TherapeuticDataCommons\DDIBUENO.csv")
+    return pd.read_csv(r"DDIBUENO.csv")
 
 df = load_data()
 
@@ -542,5 +542,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
