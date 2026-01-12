@@ -338,6 +338,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
     """Mostrar análisis detallado de interacciones con valores de 'Y'"""
     
     if not G_filtrado or len(G_filtrado.edges()) == 0:
+        st.info("No interactions to analyze.")
         return
     
     st.subheader("📊 Interaction Analysis")
@@ -438,6 +439,9 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
                 use_container_width=True,
                 hide_index=True
             )
+        else:
+            outgoing_df = None
+            st.write("No outgoing interactions.")
         
         if incoming:
             st.write(f"**Incoming interactions ({len(incoming)}):**")
@@ -447,27 +451,39 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
                 use_container_width=True,
                 hide_index=True
             )
+        else:
+            incoming_df = None
+            st.write("No incoming interactions.")
         
-        # Resumen estadístico
+        # Resumen estadístico - VERSIÓN CORREGIDA
         if outgoing or incoming:
             st.write("**Summary:**")
             col1, col2, col3 = st.columns(3)
             
             with col1:
-                if outgoing:
+                if outgoing and outgoing_df is not None and not outgoing_df.empty:
                     avg_outgoing = outgoing_df['Y Value'].mean()
                     st.metric("Avg Y (Outgoing)", f"{avg_outgoing:.2f}")
+                else:
+                    st.metric("Avg Y (Outgoing)", "N/A")
             
             with col2:
-                if incoming:
+                if incoming and incoming_df is not None and not incoming_df.empty:
                     avg_incoming = incoming_df['Y Value'].mean()
                     st.metric("Avg Y (Incoming)", f"{avg_incoming:.2f}")
+                else:
+                    st.metric("Avg Y (Incoming)", "N/A")
             
             with col3:
                 total = len(outgoing) + len(incoming)
                 if total > 0:
-                    total_avg = (sum(outgoing_df['Y Value']) + sum(incoming_df['Y Value'])) / total
+                    # Asegurarnos de que los DataFrames existen antes de usarlos
+                    outgoing_sum = sum(outgoing_df['Y Value']) if outgoing and outgoing_df is not None and not outgoing_df.empty else 0
+                    incoming_sum = sum(incoming_df['Y Value']) if incoming and incoming_df is not None and not incoming_df.empty else 0
+                    total_avg = (outgoing_sum + incoming_sum) / total
                     st.metric("Total Avg Y", f"{total_avg:.2f}")
+                else:
+                    st.metric("Total Avg Y", "N/A")
 
 def main():
     st.title("Drug Interaction Network Visualization")
@@ -613,7 +629,7 @@ def main():
         st.plotly_chart(fig, use_container_width=True, 
                        config={'displayModeBar': True, 'scrollZoom': True})
         
-        # Mostrar estadísticas básicas
+        # Mostrar estadísticas
         st.subheader("Statistics")
         
         if G_filtrado:
@@ -659,5 +675,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
