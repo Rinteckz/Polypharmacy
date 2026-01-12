@@ -12,7 +12,7 @@ st.set_page_config(layout="wide")
 # Cargar datos
 @st.cache_data
 def load_data():
-    df = pd.read_csv(r"C:\Users\edjom\OneDrive\Escritorio\TherapeuticDataCommons\DDIBUENO.csv")
+    df = pd.read_csv(r"DDIBUENO.csv")
     
     # Mostrar información del dataset
     st.sidebar.info(f"Dataset loaded: {len(df)} rows")
@@ -615,6 +615,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
