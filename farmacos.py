@@ -834,7 +834,7 @@ def pestaña_esenciales():
     
     # Mostrar tabla principal
     st.dataframe(
-        df_farmacos_esenciales[['Common_Name', 'ATC_Code', 'Source', 'Y_Value']],
+        df_farmacos_esenciales[['Common_Name', 'ATC_Code', 'Source', 'Y_Value','Drug_Pair']],
         use_container_width=True,
         column_config={
             "Common_Name": st.column_config.TextColumn("Drug Name", width="medium"),
