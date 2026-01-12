@@ -999,8 +999,8 @@ def about():
     st.title("About this web page")
     st.write("This application has been developed to visualize drug-drug interactions using network graphs. It allows user to navigate trhough a large dataset of drugs and their interactions.")
     st.write("We showcase essential drugs as defined by the World Healt Organization (WHO) and compare them with the dataset DDI, to identify which essential drugs have kwon interactions.")
-    st.write("The DDI dataset was obtained from  <a href='https://tdcommons.ai/'>Therapeutic data commons</a>")
-    st.write("The essential drug list was obtained from <a href='https://pmc.ncbi.nlm.nih.gov/articles/PMC6560372/pdf/BLT.18.222448.pdf'> Comparison of essential medicines lists in 137 countries </a>")
+ #   st.write("The DDI dataset was obtained from  <a href='https://tdcommons.ai/'>Therapeutic data commons</a>")
+ #   st.write("The essential drug list was obtained from <a href='https://pmc.ncbi.nlm.nih.gov/articles/PMC6560372/pdf/BLT.18.222448.pdf'> Comparison of essential medicines lists in 137 countries </a>")
 
 def main():
     # Crear pestañas de navegación
