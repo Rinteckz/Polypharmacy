@@ -12,7 +12,7 @@ st.set_page_config(layout="wide")
 # Cargar datos
 @st.cache_data
 def load_data():
-    return pd.read_csv(r"DDIBUENO.csv")
+    return pd.read_csv(r"C:\Users\edjom\OneDrive\Escritorio\TherapeuticDataCommons\DDIBUENO.csv")
 
 df = load_data()
 
@@ -421,7 +421,11 @@ def main():
             
             with col2:
                 # Mostrar categoría con color y contador
-                color = ATC_COLORS.get(category[:1], ATC_COLORS.get(category, '#CCCCCC'))
+                color = ATC_COLORS.get(
+                category if category in ATC_COLORS else category[0],
+                             '#CCCCCC'
+                )
+
                 st.markdown(
                     f"<span style='color:{color}; font-weight:bold;'>■</span> "
                     f"{category} ({count})",
@@ -451,12 +455,12 @@ def main():
         st.info("👈 **Please select at least one ATC category from the sidebar to display drugs.**")
         
         # Mostrar estadísticas generales
-        with st.expander("📊 Dataset Statistics", expanded=True):
+        with st.expander("Dataset Statistics", expanded=True):
             col1, col2 = st.columns(2)
             with col1:
                 st.metric("Total Drugs in Dataset", len(G_completo.nodes()))
             with col2:
-                st.metric("Total Interactions", len(G_completo.edges()))
+                st.metric("Total Interactions: 191808")
             
             # Mostrar distribución de categorías
             category_counts = Counter()
@@ -542,7 +546,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
 
 
