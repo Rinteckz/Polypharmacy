@@ -1055,6 +1055,7 @@ def main():
     tab1, tab2, tab3 = st.tabs([
 
         "Network interactions Visualization", 
+        "Essentials"
         "Y dataset"
     ])
     
@@ -1063,7 +1064,7 @@ def main():
     with tab1:
         pestaña_visualizacion()
     with tab2:
-        pestaña_significado_y()
+        pestaña_esenciales()
     with tab3:
         pestaña_significado_y()
 
