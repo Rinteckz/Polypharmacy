@@ -886,7 +886,7 @@ def pestaña_significado_y():
 
 def main():
     # Crear pestañas de navegación
-     tab2, tab3 = st.tabs([
+    tab2, tab3 = st.tabs([
 
         "Network interactions Visualization", 
         "Y dataset"
