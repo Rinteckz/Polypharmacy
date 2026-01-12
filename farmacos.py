@@ -17,7 +17,7 @@ def load_data():
 df = load_data()
 
 ATC_CATEGORIES = {
-    'A': 'Alimentary tracto',
+    'A': 'Alimentary tract',
     'B': 'Blood organs',
     'C': 'Cardiovascular',
     'D': 'Dermatologicals',
@@ -574,4 +574,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
