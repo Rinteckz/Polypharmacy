@@ -14,7 +14,13 @@ st.set_page_config(layout="wide")
 def load_data():
     return pd.read_csv(r"DDIBUENO.csv")
 
+
 df = load_data()
+
+@st.cache_data
+def load_data2():
+    return pd.read_csv(r"drugbank_ddi_label_map.csv")
+meeaning_y=load_data2()
 
 # DICCIONARIO CON NOMBRES COMPLETOS DE ATC
 ATC_CATEGORIES = {
@@ -717,172 +723,77 @@ def pestaña_visualizacion():
     """)
 
 def pestaña_significado_y():
-    """Pestaña sobre el significado de los valores Y"""
-    st.title("📊 Significado de los Valores Y")
+    st.title("Dataset, menaing of Y values")
+    st.header('Dataset')
+    st.dataframe(meeaning_y,use_container_width=True)
     
-    st.header("Introducción")
-    st.write("""
-    Los valores **Y** en este dataset representan **tipos específicos de interacciones farmacológicas**.
-    Cada valor numérico tiene un significado particular que describe la naturaleza de la interacción
-    entre dos fármacos.
-    """)
-    
-    st.header("Interpretación de los Valores")
-    
-    # Definición de valores Y (puedes ajustar según tu dataset específico)
-    y_definitions = {
-        0: {
-            "nombre": "Sin Interacción Conocida",
-            "descripcion": "No se ha documentado interacción clínica significativa entre los fármacos",
-            "implicacion": "Pueden administrarse conjuntamente sin precauciones especiales",
-            "ejemplo": "Paracetamol y Vitaminas"
-        },
-        1: {
-            "nombre": "Interacción Leve",
-            "descripcion": "Interacción de baja significancia clínica",
-            "implicacion": "Monitorización ocasional recomendada",
-            "ejemplo": "Algunos antihistamínicos y antidepresivos"
-        },
-        2: {
-            "nombre": "Interacción Moderada",
-            "descripcion": "Interacción con efectos clínicos significativos",
-            "implicacion": "Ajuste de dosis o monitorización regular necesaria",
-            "ejemplo": "Warfarina y algunos antibióticos"
-        },
-        3: {
-            "nombre": "Interacción Grave",
-            "descripcion": "Interacción con riesgo importante para la salud",
-            "implicacion": "Evitar combinación o monitorización intensiva",
-            "ejemplo": "IMAOs y alimentos con tiramina"
-        },
-        4: {
-            "nombre": "Interacción Contraindicada",
-            "descripcion": "Combinación absolutamente contraindicada",
-            "implicacion": "Nunca administrar conjuntamente",
-            "ejemplo": "Cloranfenicol y fenobarbital en neonatos"
-        }
-    }
-    
-    # Mostrar tabla de definiciones
-    st.subheader("Tabla de Valores Y")
-    
-    # Crear DataFrame para la tabla
-    df_y = pd.DataFrame([
-        {
-            "Valor Y": y_val,
-            "Nombre": info["nombre"],
-            "Descripción": info["descripcion"],
-            "Implicación Clínica": info["implicacion"],
-            "Ejemplo": info["ejemplo"]
-        }
-        for y_val, info in y_definitions.items()
-    ])
-    
-    # Aplicar formato condicional
-    def color_row(val):
-        color_map = {
-            0: '#d4edda',  # Verde claro
-            1: '#fff3cd',  # Amarillo claro
-            2: '#ffeaa7',  # Amarillo
-            3: '#f8d7da',  # Rojo claro
-            4: '#dc3545'   # Rojo
-        }
-        return [f'background-color: {color_map.get(val, "white")}'] * 5
-    
-    styled_df = df_y.style.apply(lambda x: color_row(x['Valor Y']), axis=1)
-    
-    st.dataframe(
-        styled_df,
-        use_container_width=True,
-        hide_index=True,
-        column_order=["Valor Y", "Nombre", "Descripción", "Implicación Clínica", "Ejemplo"]
-    )
-    
-    st.header("Visualización de Distribución")
-    
-    # Crear gráfico de distribución
-    fig = go.Figure(data=[
-        go.Bar(
-            x=list(y_definitions.keys()),
-            y=[10, 25, 40, 20, 5],  # Valores de ejemplo - reemplazar con datos reales
-            text=[info["nombre"] for info in y_definitions.values()],
-            textposition='auto',
-            marker_color=['#28a745', '#ffc107', '#fd7e14', '#dc3545', '#721c24']
-        )
-    ])
-    
-    fig.update_layout(
-        title="Distribución Ejemplar de Valores Y",
-        xaxis_title="Valor Y",
-        yaxis_title="Frecuencia Relativa (%)",
-        template="plotly_white"
-    )
-    
-    st.plotly_chart(fig, use_container_width=True)
-    
-    st.header("Implicaciones Clínicas")
-    
-    cols = st.columns(3)
-    
-    with cols[0]:
-        st.info("**Valores 0-1**")
-        st.write("""
-        - **Bajo riesgo**
-        - Monitorización mínima
-        - Combinación generalmente segura
-        """)
-    
-    with cols[1]:
-        st.warning("**Valor 2**")
-        st.write("""
-        - **Riesgo moderado**
-        - Ajuste de dosis posible
-        - Monitorización recomendada
-        """)
-    
-    with cols[2]:
-        st.error("**Valores 3-4**")
-        st.write("""
-        - **Alto riesgo**
-        - Evitar combinación
-        - Monitorización intensiva si es esencial
-        """)
-    
-    st.header("Recomendaciones de Uso")
-    
-    st.write("""
-    1. **Interpretar en contexto**: Los valores Y deben considerarse junto con información clínica completa
-    2. **Verificar fuentes**: Confirmar con literatura farmacológica actualizada
-    3. **Considerar individualidad**: Factores del paciente pueden modificar el riesgo
-    4. **Consultar especialistas**: En caso de duda, consultar con farmacólogo clínico
-    """)
-    
-    st.header("Ejemplos Prácticos")
-    
-    with st.expander("Ejemplo 1: Paciente con múltiples comorbilidades", expanded=False):
-        st.write("""
-        **Situación**: Paciente diabético hipertenso con infección
-        - Fármaco A: Metformina (Y=0 con la mayoría)
-        - Fármaco B: Enalapril (Y=1 con algunos antibióticos)
-        - Fármaco C: Amoxicilina (Y=2 con anticoagulantes)
-        
-        **Análisis**: 
-        - Metformina + Enalapril: Seguro (Y=0)
-        - Enalapril + Amoxicilina: Monitorizar función renal (Y=1)
-        - No hay interacciones graves en este caso
-        """)
-    
-    with st.expander("Ejemplo 2: Combinación de riesgo", expanded=False):
-        st.write("""
-        **Situación**: Paciente con depresión y dolor crónico
-        - Fármaco A: Fluoxetina (ISRS)
-        - Fármaco B: Tramadol (opioide)
-        
-        **Análisis**:
-        - Y=3 (Interacción grave)
-        - Riesgo de síndrome serotoninérgico
-        - **Recomendación**: Evitar combinación o usar dosis mínimas con monitorización estrecha
-        """)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def main():
     # Crear pestañas de navegación
