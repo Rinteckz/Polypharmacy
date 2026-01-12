@@ -1,4 +1,4 @@
-una duda en el apartado de filter by atc category, los colores estan mal, pero en los grafos son correctos, como lo cortigo solo dime la parte que corregir, no me devulevas todo el codigo import networkx as nx
+import networkx as nx
 import plotly.graph_objects as go
 import plotly.express as px
 from collections import Counter
@@ -542,5 +542,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
