@@ -382,11 +382,8 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
         # Ordenar por valor Y
         interacciones_df = interacciones_df.sort_values('Y Value')
         
+        # Agregar colores según valor Y
         
-        
-        styled_df = interacciones_df.style.applymap(
-            color_y_value, subset=['Y Value']
-        )
         
         st.dataframe(
             styled_df,
@@ -668,5 +665,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
