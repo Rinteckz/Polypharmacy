@@ -12,20 +12,7 @@ st.set_page_config(layout="wide")
 # Cargar datos
 @st.cache_data
 def load_data():
-    df = pd.read_csv(r"DDIBUENO.csv")
-    
-    # Mostrar información del dataset
-    st.sidebar.info(f"Dataset loaded: {len(df)} rows")
-    
-    # Verificar duplicados en las interacciones
-    unique_interactions = df[['Common_name_x', 'Common_name_y']].drop_duplicates()
-    st.sidebar.info(f"Unique drug pairs: {len(unique_interactions)}")
-    
-    # Contar interacciones por tipo
-    interaction_counts = df['Y'].value_counts()
-    st.sidebar.info(f"Interaction types: Type 1: {interaction_counts.get(1, 0)}, Type 2: {interaction_counts.get(2, 0)}")
-    
-    return df
+    return pd.read_csv(r"DDIBUENO.csv")
 
 df = load_data()
 
@@ -88,15 +75,10 @@ def get_atc_color_and_category(atc_code, num_atc):
 
 @st.cache_data
 def crear_grafo_completo(df):
-    """Crear grafo completo con todos los fármacos - EXACTO como en Matplotlib"""
+    """Crear grafo completo con todos los fármacos"""
     G = nx.DiGraph()
     
-    # Estadísticas para debug
-    total_rows = len(df)
-    edges_added = 0
-    edges_skipped = 0
-    
-    for idx, row in df.iterrows():
+    for _, row in df.iterrows():
         drug1 = row['Common_name_x']
         drug2 = row['Common_name_y']
         interaction_type = row['Y'] 
@@ -109,7 +91,6 @@ def crear_grafo_completo(df):
         num_atc2 = row['num_atc_y']
         color2, category2 = get_atc_color_and_category(atc2, num_atc2)
         
-        # Agregar nodo 1 si no existe
         if not G.has_node(drug1):
             tooltip_info = f"<b>Drug:</b> {drug1}<br><b>ATC Code:</b> {atc1}<br><b>ATC Category:</b> {category1}"
             G.add_node(drug1, 
@@ -119,7 +100,6 @@ def crear_grafo_completo(df):
                       num_atc=num_atc1,
                       tooltip=tooltip_info)
         
-        # Agregar nodo 2 si no existe
         if not G.has_node(drug2):
             tooltip_info = f"<b>Drug:</b> {drug2}<br><b>ATC Code:</b> {atc2}<br><b>ATC Category:</b> {category2}"
             G.add_node(drug2, 
@@ -129,25 +109,12 @@ def crear_grafo_completo(df):
                       num_atc=num_atc2,
                       tooltip=tooltip_info)
         
-        # Agregar arista (EXACTAMENTE como en Matplotlib)
         if not G.has_edge(drug1, drug2):
             interaction_desc = "Type 1" if interaction_type == 1 else "Type 2" if interaction_type == 2 else "Unknown"
             edge_tooltip = f"<b>Interaction Type:</b> {interaction_desc}<br><b>From:</b> {drug1} → <b>To:</b> {drug2}"
             G.add_edge(drug1, drug2, 
                       interaction_type=interaction_type,
                       tooltip=edge_tooltip)
-            edges_added += 1
-        else:
-            edges_skipped += 1
-    
-    # Guardar estadísticas
-    st.session_state.graph_stats = {
-        'total_rows': total_rows,
-        'edges_added': edges_added,
-        'edges_skipped': edges_skipped,
-        'unique_drugs': len(G.nodes()),
-        'unique_interactions': len(G.edges())
-    }
     
     return G
 
@@ -169,10 +136,11 @@ def crear_subgrafo_centrado(G, farmaco_objetivo):
         return None, None
 
 def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
-    """Crear visualización del grafo con Plotly"""
+    """Crear visualización del grafo con Plotly - FIEL AL COMPORTAMIENTO ORIGINAL"""
     
-    # Si no hay categorías activas, no mostrar nada
+    # Si no hay categorías activas, no mostrar nada (como en el original)
     if active_categories is None or not any(active_categories.values()):
+        # Crear figura vacía con mensaje
         fig = go.Figure()
         fig.update_layout(
             title=dict(
@@ -185,13 +153,13 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
             ),
             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
             yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            plot_bgcolor='white',
+            plot_bgcolor='black',
             height=600,
             width=800
         )
         return fig, None
     
-    # Filtrar nodos por categorías activas
+    # Filtrar nodos por categorías activas (EXACTAMENTE como en el original)
     nodes_to_keep = []
     
     # El fármaco principal SIEMPRE se muestra si existe
@@ -208,6 +176,7 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
             nodes_to_keep.append(node)
     
     if not nodes_to_keep:
+        # Crear figura vacía
         fig = go.Figure()
         fig.update_layout(
             title=dict(
@@ -220,7 +189,7 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
             ),
             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
             yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            plot_bgcolor='white',
+            plot_bgcolor='black',
             height=600,
             width=800
         )
@@ -239,8 +208,9 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
     for u, v in edges_to_keep:
         G_filtered.add_edge(u, v, **G[u][v])
     
-    # Calcular posiciones de los nodos
+    # Calcular posiciones de los nodos (EXACTAMENTE como en el original)
     if farmaco_principal and farmaco_principal in G_filtered.nodes():
+        # Layout centrado en fármaco principal
         pos = {}
         pos[farmaco_principal] = np.array([0, 0])
         
@@ -259,11 +229,17 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
                 y = radius * np.sin(angle)
                 pos[neighbor] = np.array([x, y])
     else:
+        # Layout spring para cuando no hay fármaco principal
         pos = nx.spring_layout(G_filtered, k=2/np.sqrt(len(G_filtered.nodes())), 
                               iterations=50, seed=42)
     
     # Preparar datos para los nodos
-    node_x, node_y, node_colors, node_sizes, node_texts, node_names = [], [], [], [], [], []
+    node_x = []
+    node_y = []
+    node_colors = []
+    node_sizes = []
+    node_texts = []
+    node_names = []
     
     for node in G_filtered.nodes():
         x, y = pos[node]
@@ -271,15 +247,17 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
         node_y.append(y)
         node_colors.append(G_filtered.nodes[node]['color'])
         
+        # Tamaño diferente para fármaco principal (como en el original)
         if farmaco_principal and node == farmaco_principal:
-            node_sizes.append(30)
+            node_sizes.append(30)  # Equivalente a 1200 en matplotlib
         else:
-            node_sizes.append(15)
+            node_sizes.append(15)  # Equivalente a 600 en matplotlib
         
         node_texts.append(G_filtered.nodes[node]['tooltip'])
         
+        # Nombre abreviado para etiqueta (como en el original)
         if farmaco_principal and node == farmaco_principal:
-            node_names.append(node)
+            node_names.append(node)  # Nombre completo para fármaco principal
         else:
             if len(node) > 20:
                 node_names.append(node[:17] + "...")
@@ -287,14 +265,22 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
                 node_names.append(node)
     
     # Preparar datos para las aristas
-    edge_x, edge_y, edge_texts = [], [], []
+    edge_x = []
+    edge_y = []
+    edge_texts = []
     
     for u, v, data in G_filtered.edges(data=True):
         x0, y0 = pos[u]
         x1, y1 = pos[v]
         
-        edge_x.extend([x0, x1, None])
-        edge_y.extend([y0, y1, None])
+        edge_x.append(x0)
+        edge_x.append(x1)
+        edge_x.append(None)
+        
+        edge_y.append(y0)
+        edge_y.append(y1)
+        edge_y.append(None)
+        
         edge_texts.append(data['tooltip'])
     
     # Crear trazas de Plotly
@@ -304,7 +290,8 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
         hoverinfo='text',
         text=edge_texts,
         mode='lines',
-        hoverlabel=dict(bgcolor='white', font_size=12)
+        name='Interactions',
+        hoverlabel=dict(bgcolor='black', font_size=12)
     )
     
     node_trace = go.Scatter(
@@ -320,10 +307,11 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
             size=node_sizes,
             line=dict(width=1, color='black')
         ),
-        hoverlabel=dict(bgcolor='white', font_size=12)
+        name='Drugs',
+        hoverlabel=dict(bgcolor='black', font_size=12)
     )
     
-    # Título
+    # Título basado en si hay fármaco principal o no
     if farmaco_principal:
         title_text = f"Drug: {farmaco_principal}<br>Drugs: {len(G_filtered.nodes())} | Interactions: {len(G_filtered.edges())}"
     else:
@@ -332,13 +320,26 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
     # Crear figura
     fig = go.Figure(data=[edge_trace, node_trace],
                    layout=go.Layout(
-                       title=dict(text=title_text, font=dict(size=14), x=0.5, xanchor='center'),
+                       title=dict(
+                           text=title_text,
+                           font=dict(size=14),
+                           x=0.5,
+                           xanchor='center'
+                       ),
                        showlegend=False,
                        hovermode='closest',
                        margin=dict(b=20, l=5, r=5, t=60),
-                       xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                       yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                       plot_bgcolor='white',
+                       xaxis=dict(
+                           showgrid=False, 
+                           zeroline=False, 
+                           showticklabels=False
+                       ),
+                       yaxis=dict(
+                           showgrid=False, 
+                           zeroline=False, 
+                           showticklabels=False
+                       ),
+                       plot_bgcolor='black',
                        height=600,
                        width=800,
                        dragmode='pan'
@@ -349,43 +350,18 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
 def main():
     st.title("Drug Interaction Network Visualization")
     
-    # Inicializar estados
+    # Inicializar estado de sesión
     if 'G_completo' not in st.session_state:
         with st.spinner("Loading drug interaction data..."):
             st.session_state.G_completo = crear_grafo_completo(df)
     
-    if 'selected_drug' not in st.session_state:
-        st.session_state.selected_drug = "None"
-    
-    if 'select_all_clicked' not in st.session_state:
-        st.session_state.select_all_clicked = False
-    
-    if 'deselect_all_clicked' not in st.session_state:
-        st.session_state.deselect_all_clicked = False
-    
-    if 'active_categories' not in st.session_state:
-        st.session_state.active_categories = {}
-    
     G_completo = st.session_state.G_completo
     
-    # Sidebar
+    # Sidebar para controles
     with st.sidebar:
         st.header("Controls")
         
-        # Mostrar estadísticas del dataset
-        with st.expander("📊 Dataset Info", expanded=False):
-            st.write(f"**CSV Rows:** {len(df):,}")
-            st.write(f"**Unique Drugs:** {len(G_completo.nodes()):,}")
-            st.write(f"**Unique Interactions:** {len(G_completo.edges()):,}")
-            
-            if 'graph_stats' in st.session_state:
-                stats = st.session_state.graph_stats
-                st.write(f"**Edges added:** {stats['edges_added']:,}")
-                st.write(f"**Duplicates skipped:** {stats['edges_skipped']:,}")
-                if stats['edges_skipped'] > 0:
-                    st.info(f"Note: {stats['edges_skipped']:,} duplicate interactions were skipped")
-        
-        # Selección de fármaco principal
+        # Opción para seleccionar fármaco principal (NUEVO para Streamlit)
         st.subheader("Select Main Drug (Optional)")
         all_drugs = sorted(set(df['Common_name_x'].tolist() + df['Common_name_y'].tolist()))
         
@@ -393,13 +369,12 @@ def main():
             "Choose a drug to focus on:",
             ["None"] + all_drugs,
             index=0,
-            key="drug_selector"
+            help="Select 'None' to see the complete network without focus"
         )
-        
-        st.session_state.selected_drug = farmaco_principal_seleccionado
         
         if farmaco_principal_seleccionado != "None":
             farmaco_principal = farmaco_principal_seleccionado
+            # Crear subgrafo centrado en el fármaco
             G_actual, farmaco_real = crear_subgrafo_centrado(G_completo, farmaco_principal)
             if G_actual is None:
                 st.error(f"Drug '{farmaco_principal}' not found!")
@@ -410,129 +385,92 @@ def main():
             farmaco_principal = None
             G_actual = G_completo
         
-        # Filtrado por categoría ATC
         st.subheader("Filter by ATC Category")
         st.write("Select categories to display (none selected by default):")
         
-        # Obtener categorías
+        # Obtener todas las categorías presentes en el grafo actual
         all_categories = set()
         for node in G_actual.nodes():
+            # Si hay fármaco principal, no incluirlo en las categorías (como en el original)
             if farmaco_principal and node == farmaco_principal:
                 continue
             all_categories.add(G_actual.nodes[node]['atc_category'])
         
         category_list = sorted(list(all_categories))
         
-        # Inicializar estados de categorías
-        for category in category_list:
-            if category not in st.session_state.active_categories:
-                st.session_state.active_categories[category] = False
+        # Inicializar checkboxes desmarcados (como en el original)
+        if 'active_categories' not in st.session_state:
+            st.session_state.active_categories = {cat: False for cat in category_list}
         
-        # Botones de selección rápida
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("Select All", use_container_width=True, key="select_all_btn"):
-                st.session_state.select_all_clicked = True
-                st.session_state.deselect_all_clicked = False
-                st.rerun()
-        
-        with col2:
-            if st.button("Deselect All", use_container_width=True, key="deselect_all_btn"):
-                st.session_state.deselect_all_clicked = True
-                st.session_state.select_all_clicked = False
-                st.rerun()
-        
-        # Aplicar cambios de botones
-        if st.session_state.select_all_clicked:
-            for category in category_list:
-                st.session_state.active_categories[category] = True
-            st.session_state.select_all_clicked = False
-        
-        if st.session_state.deselect_all_clicked:
-            for category in category_list:
-                st.session_state.active_categories[category] = False
-            st.session_state.deselect_all_clicked = False
-        
-        # Mostrar checkboxes
-        st.write("---")
-        st.write("**Categories:**")
-        
+        # Mostrar checkboxes con contadores
         for category in category_list:
             count = sum(1 for node in G_actual.nodes() 
                        if G_actual.nodes[node]['atc_category'] == category and 
                        node != farmaco_principal)
             
-            checked = st.checkbox(
-                f"{category} ({count:,})",
-                value=st.session_state.active_categories[category],
-                key=f"cat_checkbox_{category}"
-            )
-            
-            if checked != st.session_state.active_categories[category]:
+            col1, col2 = st.columns([1, 3])
+            with col1:
+                # Checkbox con estado guardado
+                checked = st.checkbox(
+                    "",
+                    value=st.session_state.active_categories.get(category, False),
+                    key=f"cat_{category}",
+                    label_visibility="collapsed"
+                )
                 st.session_state.active_categories[category] = checked
+            
+            with col2:
+                # Mostrar categoría con color y contador
+                color = ATC_COLORS.get(category[:1], ATC_COLORS.get(category, '#CCCCCC'))
+                st.markdown(
+                    f"<span style='color:{color}; font-weight:bold;'>■</span> "
+                    f"{category} ({count})",
+                    unsafe_allow_html=True
+                )
+        
+        # Botones de selección rápida
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Select All", use_container_width=True):
+                for category in category_list:
+                    st.session_state.active_categories[category] = True
+                    st.session_state[f"cat_{category}"] = True
+        
+        with col2:
+            if st.button("Deselect All", use_container_width=True):
+                for category in category_list:
+                    st.session_state.active_categories[category] = False
+                    st.session_state[f"cat_{category}"] = False
     
     # Área principal
     st.subheader("Network Visualization")
     
-    # Determinar grafo actual
-    if st.session_state.selected_drug != "None":
-        farmaco_principal = st.session_state.selected_drug
-        G_actual, farmaco_real = crear_subgrafo_centrado(G_completo, farmaco_principal)
-        if G_actual is not None:
-            farmaco_principal = farmaco_real
-    else:
-        farmaco_principal = None
-        G_actual = G_completo
-    
     # Verificar si hay algo para mostrar
     if not any(st.session_state.active_categories.values()) and not farmaco_principal:
+        # Mostrar mensaje como en el original
         st.info("👈 **Please select at least one ATC category from the sidebar to display drugs.**")
         
-        # Mostrar estadísticas DETALLADAS
-        with st.expander("📊 Detailed Dataset Statistics", expanded=True):
-            col1, col2, col3 = st.columns(3)
+        # Mostrar estadísticas generales
+        with st.expander("📊 Dataset Statistics", expanded=True):
+            col1, col2 = st.columns(2)
             with col1:
-                st.metric("Total CSV Rows", f"{len(df):,}")
+                st.metric("Total Drugs in Dataset", len(G_completo.nodes()))
             with col2:
-                st.metric("Unique Drugs", f"{len(G_completo.nodes()):,}")
-            with col3:
-                st.metric("Unique Interactions", f"{len(G_completo.edges()):,}")
+                st.metric("Total Interactions", len(G_completo.edges()))
             
-            # Información adicional
-            st.write("**Additional Statistics:**")
-            
-            # Contar fármacos únicos
-            all_unique_drugs = set(df['Common_name_x'].tolist() + df['Common_name_y'].tolist())
-            st.write(f"- Total unique drug names in CSV: {len(all_unique_drugs):,}")
-            
-            # Contar pares únicos (sin dirección)
-            df['drug_pair'] = df.apply(lambda row: tuple(sorted([row['Common_name_x'], row['Common_name_y']])), axis=1)
-            unique_pairs = df['drug_pair'].nunique()
-            st.write(f"- Unique drug pairs (undirected): {unique_pairs:,}")
-            
-            # Distribución por categoría ATC
-            st.write("**Drugs by ATC Category:**")
+            # Mostrar distribución de categorías
             category_counts = Counter()
             for node in G_completo.nodes():
                 category_counts[G_completo.nodes[node]['atc_category']] += 1
             
+            st.write("**Drugs by ATC Category:**")
             for category, count in sorted(category_counts.items()):
                 color = ATC_COLORS.get(category[:1], ATC_COLORS.get(category, '#CCCCCC'))
-                percentage = (count / len(G_completo.nodes())) * 100
                 st.markdown(
                     f"<span style='color:{color}; font-weight:bold;'>■</span> "
-                    f"{category}: {count:,} drugs ({percentage:.1f}%)",
+                    f"{category}: {count} drugs",
                     unsafe_allow_html=True
                 )
-            
-            # Estadísticas de duplicados si existen
-            if 'graph_stats' in st.session_state:
-                stats = st.session_state.graph_stats
-                if stats['edges_skipped'] > 0:
-                    st.warning(f"⚠️ **Note:** {stats['edges_skipped']:,} duplicate interactions were removed from the graph")
-                    st.write(f"- Graph shows unique interactions only")
-                    st.write(f"- Raw CSV contains {stats['total_rows']:,} rows")
-                    st.write(f"- After removing duplicates: {stats['edges_added']:,} unique interactions")
     else:
         # Crear y mostrar gráfico
         fig, G_filtrado = crear_grafo_plotly(
@@ -544,73 +482,62 @@ def main():
         st.plotly_chart(fig, use_container_width=True, 
                        config={'displayModeBar': True, 'scrollZoom': True})
         
-        # Mostrar estadísticas del gráfico filtrado
-        st.subheader("Current View Statistics")
+        # Mostrar estadísticas
+        st.subheader("Statistics")
         
         if G_filtrado:
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.metric("Displayed Drugs", f"{len(G_filtrado.nodes()):,}")
+                st.metric("Displayed Drugs", len(G_filtrado.nodes()))
             with col2:
-                st.metric("Displayed Interactions", f"{len(G_filtrado.edges()):,}")
+                st.metric("Displayed Interactions", len(G_filtrado.edges()))
             with col3:
                 if farmaco_principal:
                     degree = G_filtrado.degree(farmaco_principal)
-                    st.metric(f"Connections of {farmaco_principal}", f"{degree:,}")
+                    st.metric(f"Connections of {farmaco_principal}", degree)
             
-            # Detalles por categoría
-            with st.expander("View category details", expanded=False):
+            # Mostrar detalles por categoría
+            with st.expander("View details by category", expanded=False):
                 category_counts = Counter()
                 for node in G_filtrado.nodes():
                     if node != farmaco_principal:
                         category_counts[G_filtrado.nodes[node]['atc_category']] += 1
                 
                 if category_counts:
-                    st.write("**Drugs in view by category:**")
                     for category, count in sorted(category_counts.items()):
                         color = ATC_COLORS.get(category[:1], ATC_COLORS.get(category, '#CCCCCC'))
                         st.markdown(
                             f"<span style='color:{color}; font-weight:bold;'>■</span> "
-                            f"{category}: {count:,} drugs",
+                            f"{category}: {count} drugs",
                             unsafe_allow_html=True
                         )
                 else:
                     st.write("No drugs from selected categories (only main drug shown)")
         
-        # Mostrar lista de fármacos
+        # Mostrar lista de fármacos visibles
         if G_filtrado and len(G_filtrado.nodes()) > 0:
             with st.expander("View list of displayed drugs", expanded=False):
                 drugs_list = sorted(G_filtrado.nodes())
-                st.write(f"**Total: {len(drugs_list):,} drugs**")
-                
-                # Mostrar en columnas
-                cols = 3
-                for i in range(0, len(drugs_list), cols):
-                    col_items = drugs_list[i:i+cols]
-                    col_objects = st.columns(cols)
-                    for j, drug in enumerate(col_items):
-                        with col_objects[j]:
-                            if drug == farmaco_principal:
-                                st.markdown(f"**🔵 {drug}**")
-                                st.caption("(Main drug)")
-                            else:
-                                category = G_filtrado.nodes[drug]['atc_category']
-                                color = G_filtrado.nodes[drug]['color']
-                                st.markdown(
-                                    f"<span style='color:{color};'>●</span> {drug}",
-                                    unsafe_allow_html=True
-                                )
-                                st.caption(f"({category})")
+                for drug in drugs_list:
+                    if drug == farmaco_principal:
+                        st.markdown(f"**🔵 {drug}** (Main drug)")
+                    else:
+                        category = G_filtrado.nodes[drug]['atc_category']
+                        color = G_filtrado.nodes[drug]['color']
+                        st.markdown(
+                            f"<span style='color:{color};'>●</span> {drug} ({category})",
+                            unsafe_allow_html=True
+                        )
     
-    # Información
+    # Información adicional
     st.markdown("---")
-    st.markdown("**About the data:**")
+    st.markdown("**How to use:**")
     st.markdown("""
-    - **Interactions are unique**: If the same drug pair appears multiple times in the CSV, 
-      only one interaction is shown in the graph
-    - **Directed graph**: Arrows show the direction of interactions (Drug A → Drug B)
-    - **ATC Categories**: Colors represent Anatomical Therapeutic Chemical classification
-    - **Interaction Types**: Type 1 and Type 2 based on the 'Y' column in the CSV
+    1. **Select a main drug** (optional) from the dropdown to focus on its interactions
+    2. **Select ATC categories** you want to visualize (all are deselected by default)
+    3. **Hover over nodes** to see drug details
+    4. **Hover over edges** to see interaction details
+    5. **Use the mouse** to pan and zoom the graph
     """)
 
 if __name__ == "__main__":
