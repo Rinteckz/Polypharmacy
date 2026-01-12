@@ -562,7 +562,7 @@ def pestaña_visualizacion():
         if deselect_all_clicked:
             for category in category_list:
                 st.session_state.active_categories[category] = False
-           st.rerun()
+            st.rerun()
     
     # Área principal
     st.subheader("Network Visualization")
