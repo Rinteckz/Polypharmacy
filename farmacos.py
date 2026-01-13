@@ -502,7 +502,6 @@ def pestaña_visualizacion():
         
         
         
-        # Obtener todas las categorías presentes en el grafo actual
         all_categories = set()
         for node in G_actual.nodes():
             if farmaco_principal and node == farmaco_principal:
@@ -511,11 +510,9 @@ def pestaña_visualizacion():
         
         category_list = sorted(list(all_categories))
         
-        # Inicializar checkboxes desmarcados
         if 'active_categories' not in st.session_state:
             st.session_state.active_categories = {cat: False for cat in category_list}
         
-        # Mostrar checkboxes con contadores
         for category in category_list:
             count = sum(1 for node in G_actual.nodes() 
                        if G_actual.nodes[node]['atc_category'] == category and 
@@ -545,7 +542,7 @@ def pestaña_visualizacion():
                     unsafe_allow_html=True
                 )
         
-        # Botones de selección rápida
+        # Botones de selección r
         col1, col2 = st.columns(2)
         
         with col1:
@@ -569,7 +566,7 @@ def pestaña_visualizacion():
     
     # Verificar si hay algo para mostrar
     if not any(st.session_state.active_categories.values()) and not farmaco_principal:
-        st.info("slec at least one ATC category from the sidebar to display drugs.**")
+        st.info("<--- **Open the sidebar to choose a drug**")
         
         with st.expander("Dataset Statistics", expanded=True):
             col1, col2 = st.columns(2)
@@ -596,7 +593,6 @@ def pestaña_visualizacion():
                     unsafe_allow_html=True
                 )
     else:
-        # Crear y mostrar gráfico
         fig, G_filtrado = crear_grafo_plotly(
             G_actual, 
             farmaco_principal, 
@@ -623,7 +619,6 @@ def pestaña_visualizacion():
             # Mostrar análisis de interacciones
             mostrar_analisis_interacciones(G_filtrado, farmaco_principal)
         
-        # Mostrar lista de fármacos visibles
         if G_filtrado and len(G_filtrado.nodes()) > 0:
             with st.expander("View list of displayed drugs", expanded=False):
                 drugs_list = sorted(G_filtrado.nodes())
