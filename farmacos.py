@@ -366,8 +366,8 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
     
     interacciones_df = pd.DataFrame(interacciones_data)
     
-    # Mostrar estadísticas de valores Y
-    st.write("**Y Value Distribution:**")
+    # Mostrar codigo de efecto (este se busca en el csv que pondré en la mismsa pag)
+    st.write("**Effect by DDI code (Y):**")
     y_counts = interacciones_df['Y Value'].value_counts().sort_index()
     
     col1, col2 = st.columns(2)
@@ -387,8 +387,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
             )
             st.plotly_chart(fig_pie, use_container_width=True)
     
-    # Mostrar tabla de interacciones
-    with st.expander("View All Interactions with Y value", expanded=False):
+    with st.expander("All Interactions with Y value", expanded=False):
         # Ordenar por valor Y
         interacciones_df = interacciones_df.sort_values('Y Value')
         
