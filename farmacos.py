@@ -139,8 +139,9 @@ def crear_grafo_completo(df):
                       tooltip=edge_tooltip)
     
     return G
-##subgrafo centrado 
+
 def crear_subgrafo_centrado(G, farmaco_objetivo):
+    """Crear subgrafo centrado en un fármaco específico"""
     farmaco_encontrado = None
     for node in G.nodes():
         if farmaco_objetivo.lower() in node.lower():
@@ -151,22 +152,7 @@ def crear_subgrafo_centrado(G, farmaco_objetivo):
         predecessors = list(G.predecessors(farmaco_encontrado))
         successors = list(G.successors(farmaco_encontrado))
         subgraph_nodes = [farmaco_encontrado] + predecessors + successors
-        G_sub = nx.DiGraph()
-
-        for node in subgraph_nodes:
-            G_sub.add_node(node, **G.nodes[node])
-
-        for u, v in subgraph_nodes:
-            if G.has_edge(u, v):
-                G_sub.add_edge(u, v, **G[u][v])
-    
-
-
-
-
-
-
-
+        G_sub = G.subgraph(subgraph_nodes).copy()
         return G_sub, farmaco_encontrado
     else:
         return None, None
@@ -477,10 +463,10 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
         
 
 def pestaña_visualizacion():
-    
+    """Pestaña principal de visualización de interacciones"""
     st.title("Drug-Drug Interaction Network Visualization")
     
-
+    # Inicializar estado de sesión
     if 'G_completo' not in st.session_state:
         with st.spinner("Loading drug interaction data..."):
             st.session_state.G_completo = crear_grafo_completo(df)
