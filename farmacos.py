@@ -387,7 +387,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
             )
             st.plotly_chart(fig_pie, use_container_width=True)
     
-    with st.expander("All Interactions in the network", expanded=False):
+    with st.expander("All Interactions with Y value", expanded=False):
         # Ordenar por valor Y
         interacciones_df = interacciones_df.sort_values('Y Value')
         
@@ -414,7 +414,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
     
     # Análisis por fármaco principal
     if farmaco_principal:
-        st.write(f"**Interactions in the network involving {farmaco_principal}:**")
+        st.write(f"**Interactions involving {farmaco_principal}:**")
         
         # Interacciones salientes (de farmaco_principal a otros)
         outgoing = []
@@ -610,7 +610,10 @@ def pestaña_visualizacion():
                 st.metric("Displayed Drugs", len(G_filtrado.nodes()))
             with col2:
                 st.metric("Displayed Interactions", len(G_filtrado.edges()))
-            
+            with col3:
+                if farmaco_principal:
+                    degree = G_filtrado.degree(farmaco_principal)
+                    st.metric(f"Connections of {farmaco_principal}", degree)
             
             # Mostrar análisis de interacciones
             mostrar_analisis_interacciones(G_filtrado, farmaco_principal)
@@ -620,7 +623,7 @@ def pestaña_visualizacion():
                 drugs_list = sorted(G_filtrado.nodes())
                 for drug in drugs_list:
                     if drug == farmaco_principal:
-                        st.markdown(f"**{drug}** (Main drug)")
+                        st.markdown(f"**🔵 {drug}** (Main drug)")
                     else:
                         category = G_filtrado.nodes[drug]['atc_category']
                         color = G_filtrado.nodes[drug]['color']
@@ -837,7 +840,17 @@ def pestaña_esenciales():
     # Mostrar estadísticas detalladas
     st.subheader("Detailed Statistics")
     
-  
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Unique Essential Drugs", len(df_farmacos_esenciales))
+    with col2:
+        st.metric("From Column X", len(df_farmacos_esenciales[df_farmacos_esenciales['Source'] == 'Column X']))
+    with col3:
+        st.metric("From Column Y", len(df_farmacos_esenciales[df_farmacos_esenciales['Source'] == 'Column Y']))
+    #with col4:
+       # unique_drugs = set(df_farmacos_esenciales['Common_Name'])
+        #st.metric("Unique Drug Names", len(unique_drugs))
+    
     
     st.subheader("Distribution by ATC Group")
     
@@ -936,7 +949,7 @@ def pestaña_esenciales():
                     3: "Severe", 4: "Contraindicated"
                 }.get(y_val, "Unknown")
                 
-                st.write(f"**Y={y_val}:** {count} interactions ({percentage:.1f}%)")
+                st.write(f"**Y={y_val} ({severity}):** {count} ({percentage:.1f}%)")
         
         with col2:
             fig_pie = px.pie(
@@ -948,7 +961,7 @@ def pestaña_esenciales():
             st.plotly_chart(fig_pie, use_container_width=True)
         
         # Top fármacos más interactivos
-        st.write(f"**Most Interactive Essential Drugs in {pais_seleccionado}:**")
+        st.write("**Most Interactive Essential Drugs:**")
         
         interaction_counts = {}
         for _, row in essential_interactions.iterrows():
@@ -987,33 +1000,15 @@ def about():
     unsafe_allow_html=True
     )
 
-    st.markdown("This web-page has been developed by Adolfo Guzmán Arenas, Jorge Luis Chavez Perez, Gilberto Lorenzo Martínez Luna y Edgardo ALberto Marin Colli")
 
-
-
-
-
-def manual():
-    
-    st.title("Users Manual")
-    st.markdown("This web application is designed to facilitate the visualization of drug–drug interactions.")
-
-    manual_tabs = st.tabs(["Manual of network interactions visualization", "Manual of Essentials",])
-    
-    with manual_tabs[0]:
-        st.write("The main page initially displays the Network Interaction Visualization tab, which shows the number of drugs in the dataset and the total number of interactions between them. Additionally, a color code is used to indicate which color corresponds to each ATC code of the drugs")
-        st.image("images/image.png")
-                
-        
 def main():
     # Crear pestañas de navegación
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    tab1, tab2, tab3, tab4 = st.tabs([
 
         "Network interactions Visualization", 
         "Essentials",
         "Y dataset",
-        "About",
-        "User Manual"
+        "About"
     ])
     
     
@@ -1026,8 +1021,6 @@ def main():
         pestaña_significado_y()
     with tab4:
         about()
-    with tab5:
-        manual()
 
 if __name__ == "__main__":
     main()
