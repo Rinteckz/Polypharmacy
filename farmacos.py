@@ -387,7 +387,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
             )
             st.plotly_chart(fig_pie, use_container_width=True)
     
-    with st.expander("All Interactions in the network", expanded=False):
+    with st.expander("All Interactions with Y value", expanded=False):
         # Ordenar por valor Y
         interacciones_df = interacciones_df.sort_values('Y Value')
         
@@ -414,7 +414,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
     
     # Análisis por fármaco principal
     if farmaco_principal:
-        st.write(f"**Interactions in the network involving {farmaco_principal}:**")
+        st.write(f"**Interactions involving {farmaco_principal}:**")
         
         # Interacciones salientes (de farmaco_principal a otros)
         outgoing = []
@@ -610,7 +610,10 @@ def pestaña_visualizacion():
                 st.metric("Displayed Drugs", len(G_filtrado.nodes()))
             with col2:
                 st.metric("Displayed Interactions", len(G_filtrado.edges()))
-            
+            with col3:
+                if farmaco_principal:
+                    degree = G_filtrado.degree(farmaco_principal)
+                    st.metric(f"Connections of {farmaco_principal}", degree)
             
             # Mostrar análisis de interacciones
             mostrar_analisis_interacciones(G_filtrado, farmaco_principal)
@@ -620,7 +623,7 @@ def pestaña_visualizacion():
                 drugs_list = sorted(G_filtrado.nodes())
                 for drug in drugs_list:
                     if drug == farmaco_principal:
-                        st.markdown(f"**{drug}** (Main drug)")
+                        st.markdown(f"**🔵 {drug}** (Main drug)")
                     else:
                         category = G_filtrado.nodes[drug]['atc_category']
                         color = G_filtrado.nodes[drug]['color']
@@ -997,202 +1000,15 @@ def about():
     unsafe_allow_html=True
     )
 
-    st.markdown("This web-page has been developed by Adolfo Guzmán Arenas, Jorge Luis Chavez Perez, Gilberto Lorenzo Martínez Luna y Edgardo ALberto Marin Colli")
 
-
-
-
-
-def manual():
-    """
-    Función que contiene todo el contenido del manual de usuario
-    """
-    st.title("📖 Manual de Usuario")
-    
-    # Navegación interna del manual
-    manual_tabs = st.tabs(["Guía Rápida", "Funcionalidades", "Tutorial", "FAQ", "Contacto"])
-    
-    with manual_tabs[0]:
-        st.header("🚀 Guía Rápida de Inicio")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("Primeros Pasos")
-            st.markdown("""
-            1. **Carga tus datos** en la pestaña 'Y dataset'
-            2. **Configura parámetros** en 'Essentials'
-            3. **Visualiza resultados** en 'Network interactions Visualization'
-            4. **Exporta** tus análisis
-            """)
-            
-        with col2:
-            st.subheader("Atajos Importantes")
-            st.markdown("""
-            - `Ctrl+R`: Recargar aplicación
-            - `Ctrl+S`: Guardar configuración
-            - **Hover**: Sobre iconos para info
-            - **Click derecho**: En gráficos para opciones
-            """)
-    
-    with manual_tabs[1]:
-        st.header("🔧 Funcionalidades Detalladas")
-        
-        # Funcionalidades por pestaña
-        with st.expander("📊 Network interactions Visualization", expanded=True):
-            st.markdown("""
-            ### Visualización de Redes
-            - **Gráficos interactivos**: Zoom, pan, selección
-            - **Filtros dinámicos**: Por tipo de interacción, peso, dirección
-            - **Exportación**: PNG, SVG, PDF
-            - **Análisis**: Métricas de centralidad, clustering
-            """)
-        
-        with st.expander("⚙️ Essentials"):
-            st.markdown("""
-            ### Configuración Esencial
-            - **Parámetros de red**: Umbrales, algoritmos
-            - **Preprocesamiento**: Normalización, filtrado
-            - **Opciones de visualización**: Colores, etiquetas, layout
-            """)
-        
-        with st.expander("📁 Y dataset"):
-            st.markdown("""
-            ### Gestión de Datos
-            - **Formatos soportados**: CSV, Excel, JSON, TXT
-            - **Límites**: Hasta 1GB de datos
-            - **Previsualización**: Tabla interactiva
-            - **Limpieza automática**: Valores nulos, duplicados
-            """)
-    
-    with manual_tabs[2]:
-        st.header("🎬 Tutorial Paso a Paso")
-        
-        step = st.select_slider(
-            "Selecciona el paso:",
-            options=["Paso 1", "Paso 2", "Paso 3", "Paso 4", "Paso 5"]
-        )
-        
-        if step == "Paso 1":
-            st.subheader("Carga de Datos")
-            st.markdown("""
-            1. Ve a la pestaña **'Y dataset'**
-            2. Haz clic en **'Browse files'**
-            3. Selecciona tu archivo (CSV, Excel, etc.)
-            4. Revisa la previsualización
-            5. Confirma con **'Load Data'**
-            """)
-            st.image("tutorial_step1.png", caption="Interfaz de carga de datos")
-            
-        elif step == "Paso 2":
-            st.subheader("Configuración de Parámetros")
-            st.markdown("""
-            1. Navega a **'Essentials'**
-            2. Ajusta los umbrales según necesites
-            3. Selecciona el algoritmo de análisis
-            4. Configura opciones de visualización
-            5. Guarda la configuración
-            """)
-    
-    with manual_tabs[3]:
-        st.header("❓ Preguntas Frecuentes")
-        
-        faq_items = {
-            "¿Cómo interpreto los resultados de la red?": """
-            **Métricas clave a considerar:**
-            - **Degree centrality**: Nodos más conectados
-            - **Betweenness**: Nodos que actúan como puentes
-            - **Clustering coefficient**: Nivel de agrupamiento
-            
-            Los nodos más grandes/coloreados son más importantes.
-            """,
-            
-            "¿Qué formatos de archivo acepta?": """
-            **Formatos soportados:**
-            - CSV (separado por comas)
-            - Excel (.xlsx, .xls)
-            - JSON
-            - TXT (formato tabular)
-            
-            **Requisitos:**
-            - Máximo 1GB por archivo
-            - UTF-8 encoding recomendado
-            """,
-            
-            "¿Puedo guardar mi sesión?": """
-            **Sí, de dos formas:**
-            
-            1. **Configuración**: Exporta settings como JSON
-            2. **Resultados**: Descarga gráficos y tablas
-            3. **Sesión completa**: Disponible en versión premium
-            
-            *Nota: Los datos subidos no se almacenan permanentemente*
-            """
-        }
-        
-        for question, answer in faq_items.items():
-            with st.expander(question):
-                st.markdown(answer)
-    
-    with manual_tabs[4]:
-        st.header("📞 Contacto y Soporte")
-        
-        st.subheader("¿Necesitas ayuda adicional?")
-        
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.markdown("""
-            ### 📧 Email
-            **Soporte técnico:**  
-            support@networkapp.com
-            
-            **Consultas generales:**  
-            info@networkapp.com
-            """)
-        
-        with col2:
-            st.markdown("""
-            ### 📚 Recursos
-            - [Documentación completa](https://docs.example.com)
-            - [Video tutoriales](https://youtube.com/example)
-            - [Foro de la comunidad](https://forum.example.com)
-            """)
-        
-        with col3:
-            st.markdown("""
-            ### 🐛 Reportar Problemas
-            **GitHub Issues:**  
-            [github.com/example/issues](https://github.com/example/issues)
-            
-            **Prioridad:**
-            - Urgente: < 24 horas
-            - Normal: 2-3 días
-            """)
-        
-        # Formulario de contacto simple
-        st.divider()
-        st.subheader("Envíanos tu consulta")
-        
-        with st.form("contact_form"):
-            name = st.text_input("Nombre")
-            email = st.text_input("Email")
-            issue_type = st.selectbox("Tipo de consulta", 
-                                     ["Problema técnico", "Sugerencia", "Pregunta general"])
-            message = st.text_area("Mensaje", height=150)
-            
-            submitted = st.form_submit_button("Enviar consulta")
-            if submitted:
-                st.success("¡Consulta enviada! Te responderemos en 24-48 horas.")
 def main():
     # Crear pestañas de navegación
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    tab1, tab2, tab3, tab4 = st.tabs([
 
         "Network interactions Visualization", 
         "Essentials",
         "Y dataset",
-        "About",
-        "User Manual"
+        "About"
     ])
     
     
@@ -1205,8 +1021,6 @@ def main():
         pestaña_significado_y()
     with tab4:
         about()
-    with tab5:
-        manual()
 
 if __name__ == "__main__":
     main()
