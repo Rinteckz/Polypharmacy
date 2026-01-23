@@ -948,7 +948,7 @@ def pestaña_esenciales():
             st.plotly_chart(fig_pie, use_container_width=True)
         
         # Top fármacos más interactivos
-        st.write("**Most Interactive Essential Drugs:**")
+        st.write(f"**Most Interactive Essential Drugs in {pais_seleccionado}:**")
         
         interaction_counts = {}
         for _, row in essential_interactions.iterrows():
