@@ -387,7 +387,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
             )
             st.plotly_chart(fig_pie, use_container_width=True)
     
-    with st.expander("All Interactions with Y value", expanded=False):
+    with st.expander("All Interactions in the network", expanded=False):
         # Ordenar por valor Y
         interacciones_df = interacciones_df.sort_values('Y Value')
         
@@ -414,7 +414,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
     
     # Análisis por fármaco principal
     if farmaco_principal:
-        st.write(f"**Interactions involving {farmaco_principal}:**")
+        st.write(f"**Interactions in the network involving {farmaco_principal}:**")
         
         # Interacciones salientes (de farmaco_principal a otros)
         outgoing = []
@@ -610,10 +610,7 @@ def pestaña_visualizacion():
                 st.metric("Displayed Drugs", len(G_filtrado.nodes()))
             with col2:
                 st.metric("Displayed Interactions", len(G_filtrado.edges()))
-            with col3:
-                if farmaco_principal:
-                    degree = G_filtrado.degree(farmaco_principal)
-                    st.metric(f"Connections of {farmaco_principal}", degree)
+            
             
             # Mostrar análisis de interacciones
             mostrar_analisis_interacciones(G_filtrado, farmaco_principal)
@@ -623,7 +620,7 @@ def pestaña_visualizacion():
                 drugs_list = sorted(G_filtrado.nodes())
                 for drug in drugs_list:
                     if drug == farmaco_principal:
-                        st.markdown(f"**🔵 {drug}** (Main drug)")
+                        st.markdown(f"**{drug}** (Main drug)")
                     else:
                         category = G_filtrado.nodes[drug]['atc_category']
                         color = G_filtrado.nodes[drug]['color']
@@ -843,10 +840,10 @@ def pestaña_esenciales():
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.metric("Unique Essential Drugs", len(df_farmacos_esenciales))
-    #with col2:
+   # with col2:
        # st.metric("From Column X", len(df_farmacos_esenciales[df_farmacos_esenciales['Source'] == 'Column X']))
-   # with col3:
-       # st.metric("From Column Y", len(df_farmacos_esenciales[df_farmacos_esenciales['Source'] == 'Column Y']))
+    #with col3:
+      #  st.metric("From Column Y", len(df_farmacos_esenciales[df_farmacos_esenciales['Source'] == 'Column Y']))
     #with col4:
        # unique_drugs = set(df_farmacos_esenciales['Common_Name'])
         #st.metric("Unique Drug Names", len(unique_drugs))
@@ -1000,15 +997,71 @@ def about():
     unsafe_allow_html=True
     )
 
+    st.markdown("This web-page has been developed by Adolfo Guzmán Arenas, Jorge Luis Chavez Perez, Gilberto Lorenzo Martínez Luna y Edgardo ALberto Marin Colli")
+
+
+
+
+
+def manual():
+    
+    st.title("Users Manual")
+    st.markdown("This web application is designed to facilitate the visualization of drug–drug interactions.")
+
+    manual_tabs = st.tabs(["Manual of network interactions visualization", "Manual of Essentials","About Y Code"])
+    
+    with manual_tabs[0]:
+        st.write("The main page initially displays the Network Interaction Visualization tab, which shows the number of drugs in the dataset and the total number of interactions between them. Additionally, a color code is used to indicate which color corresponds to each therapeutic subgroup by ATC code of the drugs, and is showed in **Drugs by ATC Category**")
+        st.image("images/image.png")
+        st.write("Click the arrow to open the sidebar.")
+        st.image("images/2f.png")
+        st.write("Initially, no specific drug is selected as the focus, nor are drugs filtered by their ATC code")
+        st.image("images/3f.png")
+        st.write("We can select any of the checkboxes to visualize drug interactions according to their therapeutic subgroup based on the ATC classification. For example, if we select Alimentary Tract and Metabolism, the interaction graph of all drugs belonging to this therapeutic subgroup will be displayed. Additionally, the title shows information about the number of drugs and interactions.")
+        st.image("images/4f.png")
+        st.write("If you scroll further down, you will see statistics such as the number of drugs in the graph, the number of interactions, and an analysis of the interactions. The Y’s represent the interactions between drugs. The meaning of the Y is explained later.")
+        st.image("images/4f2.png")
+        st.write("Scrolling further down displays a table containing all interactions in the graph, along with a table listing all drugs.")
+        st.image("images/4f3.png")
+        st.write("You can also select more than one ATC therapeutic subgroup to visualize their interaction graph.")
+        st.image("images/5f.png")
+        st.write("Now, if you want to focus on a specific drug, you can search for it using the search bar and select it.As in the case where no drug is selected, the therapeutic subgroup checkboxes are initially unchecked.")
+        st.image("images/6f.png")
+        st.write("Select the therapeutic subgroups you want to analyze to see their interactions with the selected primary drug (in this case, verteporfin), as well as any interactions among these drugs. Select all checkboxes to visualize all interactions.")
+        st.image("images/7f.png")
+        st.write("You can interact with the graph. For example, if you hover the cursor over a node representing a drug, you will see the drug name, its ATC code, and its therapeutic subgroup. Additionally, in the upper-right corner, the toolbar icons allow you to save the image, zoom in, and reset the view.")
+        st.image("images/8f.png")
+        st.write("Additionally, if you scroll down again, you can view statistics such as the number of drugs displayed in the graph and the number of interactions, as well as statistics on the number of drugs with a Y interaction")
+        st.image("images/9f.png")
+        st.write("Again, if you scroll further down, you can see all the interactions in the graph displayed in a tabular format. You can also view, specifically, the interactions that involve only the primary drug (in this case, verteporfin). The verteporfin to Drug B table indicates that verteporfin (the selected drug) acts on Drug B, while the Drug A to verteporfin table indicates that Drug A acts on verteporfin. Additionally, the type of interaction is indicated using the Y code.")
+        st.image("images/10f.png")
+        
+
+    with manual_tabs[1]:
+        st.write("In this section, you can choose a country to see which of its essential drugs are included in the DDI dataset. The total number of essential drugs is shown first. For example if you choose Mexico, you can see that Mexico has 706 essentials drugs according to the WHO")
+        st.image("images/11f.png")
+        st.write("The essential drugs of the selected country (in this case, Mexico) that are included in the DDI dataset are shown in the following table.")
+        st.image("images/12f.png")
+
+
+
+
+
+
+
+
+
+
 
 def main():
-    # Crear pestañas de navegación
-    tab1, tab2, tab3, tab4 = st.tabs([
+
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
 
         "Network interactions Visualization", 
         "Essentials",
         "Y dataset",
-        "About"
+        "About",
+        "User Manual"
     ])
     
     
@@ -1021,6 +1074,8 @@ def main():
         pestaña_significado_y()
     with tab4:
         about()
+    with tab5:
+        manual()
 
 if __name__ == "__main__":
     main()
