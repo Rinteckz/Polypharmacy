@@ -821,7 +821,7 @@ def pestaña_esenciales():
     df_farmacos_esenciales = df_farmacos_esenciales.sort_values('Common_Name')
     
     
-    st.subheader(f"Essential Drugs from {pais_seleccionado} found in DDIBUENO")
+    st.subheader(f"Essential Drugs from {pais_seleccionado} found in DDI dataset")
     
     # Mostrar tabla principal
     st.dataframe(
