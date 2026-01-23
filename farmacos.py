@@ -387,7 +387,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
             )
             st.plotly_chart(fig_pie, use_container_width=True)
     
-    with st.expander("All Interactions with Y value", expanded=False):
+    with st.expander("All Interactions in the network", expanded=False):
         # Ordenar por valor Y
         interacciones_df = interacciones_df.sort_values('Y Value')
         
@@ -414,7 +414,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
     
     # Análisis por fármaco principal
     if farmaco_principal:
-        st.write(f"**Interactions involving {farmaco_principal}:**")
+        st.write(f"**Interactions in the network involving {farmaco_principal}:**")
         
         # Interacciones salientes (de farmaco_principal a otros)
         outgoing = []
@@ -610,10 +610,7 @@ def pestaña_visualizacion():
                 st.metric("Displayed Drugs", len(G_filtrado.nodes()))
             with col2:
                 st.metric("Displayed Interactions", len(G_filtrado.edges()))
-            with col3:
-                if farmaco_principal:
-                    degree = G_filtrado.degree(farmaco_principal)
-                    st.metric(f"Connections of {farmaco_principal}", degree)
+            
             
             # Mostrar análisis de interacciones
             mostrar_analisis_interacciones(G_filtrado, farmaco_principal)
@@ -623,7 +620,7 @@ def pestaña_visualizacion():
                 drugs_list = sorted(G_filtrado.nodes())
                 for drug in drugs_list:
                     if drug == farmaco_principal:
-                        st.markdown(f"**🔵 {drug}** (Main drug)")
+                        st.markdown(f"**{drug}** (Main drug)")
                     else:
                         category = G_filtrado.nodes[drug]['atc_category']
                         color = G_filtrado.nodes[drug]['color']
@@ -1000,15 +997,32 @@ def about():
     unsafe_allow_html=True
     )
 
+    st.markdown("This web-page has been developed by Adolfo Guzmán Arenas, Jorge Luis Chavez Perez, Gilberto Lorenzo Martínez Luna y Edgardo ALberto Marin Colli")
 
+
+
+
+
+def manual():
+    
+    st.title("Users Manual")
+    st.markdown("This web application is designed to facilitate the visualization of drug–drug interactions.")
+
+    manual_tabs = st.tabs(["Manual of network interactions visualization", "Manual of Essentials",])
+    
+    with manual_tabs[0]:
+        st.write("")
+        
+        
 def main():
     # Crear pestañas de navegación
-    tab1, tab2, tab3, tab4 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
 
         "Network interactions Visualization", 
         "Essentials",
         "Y dataset",
         "About"
+        "User Manual"
     ])
     
     
@@ -1021,6 +1035,8 @@ def main():
         pestaña_significado_y()
     with tab4:
         about()
+    with tab5:
+        manual()
 
 if __name__ == "__main__":
     main()
