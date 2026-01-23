@@ -1205,7 +1205,7 @@ def main():
         pestaña_significado_y()
     with tab4:
         about()
-    with tab4:
+    with tab5:
         manual()
 
 if __name__ == "__main__":
