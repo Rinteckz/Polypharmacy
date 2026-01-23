@@ -1021,7 +1021,7 @@ def main():
         "Network interactions Visualization", 
         "Essentials",
         "Y dataset",
-        "About"
+        "About",
         "User Manual"
     ])
     
