@@ -101,10 +101,13 @@ def crear_grafo_completo(df):
     """Crear grafo completo con todos los fármacos"""
     G = nx.DiGraph()
     
+    # Diccionario para acumular interacciones múltiples
+    edge_interactions = {}
+    
     for _, row in df.iterrows():
         drug1 = row['Common_name_x']
         drug2 = row['Common_name_y']
-        interaction_type = row['Y'] 
+        interaction_type = row['Y']
         
         atc1 = row['atc_code_x'] if pd.notna(row['atc_code_x']) else "No ATC"
         num_atc1 = row['num_atc_x']
@@ -132,14 +135,40 @@ def crear_grafo_completo(df):
                       num_atc=num_atc2,
                       tooltip=tooltip_info)
         
-        if not G.has_edge(drug1, drug2):
-            edge_tooltip = f"<b>From:</b> {drug1} → <b>To:</b> {drug2}"
-            G.add_edge(drug1, drug2, 
-                      interaction_type=interaction_type,
-                      tooltip=edge_tooltip)
+        # Usar una clave única para el borde
+        edge_key = (drug1, drug2)
+        
+        # Acumular interacciones para este borde
+        if edge_key not in edge_interactions:
+            edge_interactions[edge_key] = []
+        
+        edge_interactions[edge_key].append(interaction_type)
+    
+    # Crear bordes con todas las interacciones
+    for (drug1, drug2), y_values in edge_interactions.items():
+        # Calcular estadísticas
+        unique_y = list(set(y_values))
+        all_y = y_values
+        
+        edge_tooltip = f"<b>From:</b> {drug1} → <b>To:</b> {drug2}<br>"
+        edge_tooltip += f"<b>Interactions found:</b> {len(y_values)}<br>"
+        
+        if len(unique_y) == 1:
+            edge_tooltip += f"<b>Y value:</b> {unique_y[0]}"
+        else:
+            edge_tooltip += f"<b>Y values:</b> {', '.join(map(str, unique_y))}<br>"
+            # Contar frecuencias
+            y_counts = Counter(y_values)
+            freq_text = ', '.join([f"{y}({count})" for y, count in sorted(y_counts.items())])
+            edge_tooltip += f"<b>Frequencies:</b> {freq_text}"
+        
+        G.add_edge(drug1, drug2, 
+                  interaction_types=all_y,  # Lista con todos los valores Y
+                  unique_interaction_types=unique_y,  # Valores únicos
+                  interaction_count=len(y_values),
+                  tooltip=edge_tooltip)
     
     return G
-
 def crear_subgrafo_centrado(G, farmaco_objetivo):
     """Crear subgrafo centrado en un fármaco específico"""
     farmaco_encontrado = None
@@ -356,48 +385,135 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
     # Preparar datos para análisis
     interacciones_data = []
     for u, v, data in G_filtrado.edges(data=True):
-        y_value = data.get('interaction_type', 'N/A')
-        interacciones_data.append({
-            'From': u,
-            'To': v,
-            'Y Value': y_value,
-            'Direction': f"{u} → {v}"
-        })
+        # Obtener todos los valores Y
+        y_values = data.get('interaction_types', [])
+        interaction_count = data.get('interaction_count', 1)
+        
+        # Para cada interacción individual
+        for y_value in y_values:
+            interacciones_data.append({
+                'From': u,
+                'To': v,
+                'Y Value': y_value,
+                'Direction': f"{u} → {v}",
+                'Interaction_ID': f"{u}_{v}_{y_value}"
+            })
+        
+        # También agregar versión resumida
+        unique_y = data.get('unique_interaction_types', [])
+        if len(unique_y) > 1:
+            interacciones_data.append({
+                'From': u,
+                'To': v,
+                'Y Value': f"Múltiple: {unique_y}",
+                'Direction': f"{u} → {v}",
+                'Interaction_ID': f"{u}_{v}_summary"
+            })
     
     interacciones_df = pd.DataFrame(interacciones_data)
     
-    # Mostrar codigo de efecto (este se busca en el csv que pondré en la mismsa pag)
-    st.write("**Effect by DDI code (Y):**")
-    y_counts = interacciones_df['Y Value'].value_counts().sort_index()
+    # Contar interacciones únicas (por par de fármacos)
+    edge_count = len(G_filtrado.edges())
     
-    col1, col2 = st.columns(2)
+    # Contar total de registros del CSV
+    total_records = 0
+    for u, v, data in G_filtrado.edges(data=True):
+        total_records += data.get('interaction_count', 1)
     
-    with col1:
-        for y_val, count in y_counts.items():
-            percentage = (count / len(interacciones_df)) * 100
-            st.write(f"**Y = {y_val}:** {count} interactions ({percentage:.1f}%)")
+    st.write(f"**Resumen:** {edge_count} pares únicos de fármacos, {total_records} registros de interacción en total")
     
-    with col2:
-        if len(y_counts) > 0:
+    # Mostrar distribución de Y (considerando cada registro)
+    st.write("**Effect by DDI code (Y) - Por registro:**")
+    
+    # Contar todos los valores Y individuales
+    all_y_values = []
+    for u, v, data in G_filtrado.edges(data=True):
+        all_y_values.extend(data.get('interaction_types', []))
+    
+    if all_y_values:
+        y_counter = Counter(all_y_values)
+        y_counts = pd.Series(y_counter).sort_index()
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            for y_val, count in y_counts.items():
+                percentage = (count / total_records) * 100
+                st.write(f"**Y = {y_val}:** {count} registros ({percentage:.1f}%)")
+        
+        with col2:
             fig_pie = px.pie(
                 values=y_counts.values,
                 names=[f"Y = {k}" for k in y_counts.index],
-                title="Distribution of Y Values",
+                title="Distribution of Y Values (por registro)",
                 color_discrete_sequence=px.colors.qualitative.Set3
             )
             st.plotly_chart(fig_pie, use_container_width=True)
     
-    with st.expander("All Interactions with Y value", expanded=False):
-        # Ordenar por valor Y
-        interacciones_df = interacciones_df.sort_values('Y Value')
+    # Mostrar interacciones con múltiples valores
+    st.write("**Interacciones con múltiples valores de Y:**")
+    multiple_y_edges = []
+    for u, v, data in G_filtrado.edges(data=True):
+        unique_y = data.get('unique_interaction_types', [])
+        if len(unique_y) > 1:
+            multiple_y_edges.append({
+                'From': u,
+                'To': v,
+                'Unique Y Values': str(unique_y),
+                'Total Records': data.get('interaction_count', 1),
+                'Individual Counts': str(dict(Counter(data.get('interaction_types', []))))
+            })
+    
+    if multiple_y_edges:
+        df_multiple = pd.DataFrame(multiple_y_edges)
+        st.dataframe(df_multiple, use_container_width=True)
+    else:
+        st.write("No hay interacciones con múltiples valores de Y")
+    
+    with st.expander("All Interactions (expanded view)", expanded=False):
+        # Crear vista expandida con todos los registros
+        expanded_data = []
+        for u, v, data in G_filtrado.edges(data=True):
+            y_values = data.get('interaction_types', [])
+            if len(set(y_values)) == 1:
+                # Un solo valor
+                expanded_data.append({
+                    'From': u,
+                    'To': v,
+                    'Y Value': y_values[0],
+                    'Count': len(y_values),
+                    'Note': '' if len(y_values) == 1 else f'({len(y_values)} registros)'
+                })
+            else:
+                # Múltiples valores
+                y_counts = Counter(y_values)
+                for y_val, count in sorted(y_counts.items()):
+                    expanded_data.append({
+                        'From': u,
+                        'To': v,
+                        'Y Value': y_val,
+                        'Count': count,
+                        'Note': f'Parte de múltiples valores'
+                    })
+        
+        expanded_df = pd.DataFrame(expanded_data)
         
         # Agregar colores según valor Y
         def color_y_value(val):
-            
-         return ''
+            colors = {
+                0: 'background-color: #90EE90',  # Verde claro
+                1: 'background-color: #FFD700',  # Amarillo
+                2: 'background-color: #FFA500',  # Naranja
+                3: 'background-color: #FF6347',  # Rojo
+                4: 'background-color: #8B0000',  # Rojo oscuro
+            }
+            if isinstance(val, (int, float)) and val in colors:
+                return colors[val]
+            return ''
         
-        styled_df = interacciones_df.style.applymap(
-            color_y_value, subset=['Y Value']
+        styled_df = expanded_df.style.apply(
+            lambda x: [color_y_value(v) for v in x], 
+            subset=['Y Value']
         )
         
         st.dataframe(
@@ -407,59 +523,11 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
                 "From": st.column_config.TextColumn("From (Drug A)", width="medium"),
                 "To": st.column_config.TextColumn("To (Drug B)", width="medium"),
                 "Y Value": st.column_config.NumberColumn("Y Value", width="small"),
-                "Direction": st.column_config.TextColumn("Direction", width="large")
+                "Count": st.column_config.NumberColumn("Records", width="small"),
+                "Note": st.column_config.TextColumn("Note", width="medium")
             },
             hide_index=True
         )
-    
-    # Análisis por fármaco principal
-    if farmaco_principal:
-        st.write(f"**Interactions involving {farmaco_principal}:**")
-        
-        # Interacciones salientes (de farmaco_principal a otros)
-        outgoing = []
-        for _, row in interacciones_df.iterrows():
-            if row['From'] == farmaco_principal:
-                outgoing.append({
-                    'Target': row['To'],
-                    'Y Value': row['Y Value'],
-                    'Type': 'Outgoing'
-                })
-        
-        # Interacciones entrantes (de otros a farmaco_principal)
-        incoming = []
-        for _, row in interacciones_df.iterrows():
-            if row['To'] == farmaco_principal:
-                incoming.append({
-                    'Source': row['From'],
-                    'Y Value': row['Y Value'],
-                    'Type': 'Incoming'
-                })
-        
-        if outgoing:
-            st.write(f"**{farmaco_principal} to drug B ({len(outgoing)}):**")
-            outgoing_df = pd.DataFrame(outgoing)
-            st.dataframe(
-                outgoing_df.sort_values('Y Value'),
-                use_container_width=True,
-                hide_index=True
-            )
-        else:
-            outgoing_df = None
-            st.write("No outgoing interactions.")
-        
-        if incoming:
-            st.write(f"**Drug A to {farmaco_principal} ({len(incoming)}):**")
-            incoming_df = pd.DataFrame(incoming)
-            st.dataframe(
-                incoming_df.sort_values('Y Value'),
-                use_container_width=True,
-                hide_index=True
-            )
-        else:
-            incoming_df = None
-            st.write("No incoming interactions.")
-        
         
 
 def pestaña_visualizacion():
@@ -560,10 +628,8 @@ def pestaña_visualizacion():
                 st.session_state.active_categories[category] = False
             st.rerun()
     
-    # Área principal
     st.subheader("Network Visualization")
     
-    # Verificar si hay algo para mostrar
     if not any(st.session_state.active_categories.values()) and not farmaco_principal:
         st.info("<--- **Open the sidebar to choose a drug**")
         
@@ -572,7 +638,7 @@ def pestaña_visualizacion():
             with col1:
                 st.metric("Total Drugs in Dataset", len(G_completo.nodes()))
             with col2:
-                st.metric("Total Interactions", len(G_completo.edges()))
+                st.metric("Total Interactions", len(df))
             
             category_counts = Counter()
             for node in G_completo.nodes():
@@ -824,7 +890,7 @@ def pestaña_esenciales():
     df_farmacos_esenciales = df_farmacos_esenciales.sort_values('Common_Name')
     
     
-    st.subheader(f"Essential Drugs from {pais_seleccionado} found in DDIBUENO")
+    st.subheader(f"Essential Drugs from {pais_seleccionado} found in DDI Interaction dataset")
     
     # Mostrar tabla principal
     st.dataframe(
