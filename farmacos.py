@@ -936,7 +936,7 @@ def pestaña_esenciales():
                     3: "Severe", 4: "Contraindicated"
                 }.get(y_val, "Unknown")
                 
-                st.write(f"**Y={y_val} ({severity}):** {count} ({percentage:.1f}%)")
+                st.write(f"**Y={y_val}:** {count} interactions ({percentage:.1f}%)")
         
         with col2:
             fig_pie = px.pie(
