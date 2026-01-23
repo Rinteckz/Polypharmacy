@@ -1001,8 +1001,8 @@ def manual():
     manual_tabs = st.tabs(["Manual of network interactions visualization", "Manual of Essentials",])
     
     with manual_tabs[0]:
-    st.write("The main page initially displays the Network Interaction Visualization tab, which shows the number of drugs in the dataset and the total number of interactions between them. Additionally, a color code is used to indicate which color corresponds to each ATC code of the drugs")
-    st.image("images/image.png")
+        st.write("The main page initially displays the Network Interaction Visualization tab, which shows the number of drugs in the dataset and the total number of interactions between them. Additionally, a color code is used to indicate which color corresponds to each ATC code of the drugs")
+        st.image("images/image.png")
                 
         
 def main():
