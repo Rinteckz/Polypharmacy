@@ -14,18 +14,19 @@ st.set_page_config(layout="wide")
 def load_data():
     return pd.read_csv(r"DDIBUENO.csv")
 
+
 df = load_data()
 
 @st.cache_data
 def load_data2():
     return pd.read_csv(r"drugbank_ddi_label_map.csv")
-meeaning_y = load_data2()
+meeaning_y=load_data2()
 
 @st.cache_data
 def load_essential_drugs():
+    
     essentials_df = pd.read_csv(r"farmacos_esenciales.csv")
     return essentials_df
-
 # DICCIONARIO CON NOMBRES COMPLETOS DE ATC
 ATC_CATEGORIES = {
     'A': 'ALIMENTARY TRACT AND METABOLISM',
@@ -83,6 +84,7 @@ def get_atc_color_and_category(atc_code, num_atc):
     
     return ATC_COLORS.get(first_char, '#CCCCCC'), ATC_CATEGORIES.get(first_char, 'Unknown')
 
+# FUNCIÓN PARA OBTENER LA LETRA ATC DEL NOMBRE DE CATEGORÍA
 def get_atc_letter_from_category(category_name):
     """Obtener la letra ATC a partir del nombre completo de la categoría"""
     for letter, name in ATC_CATEGORIES.items():
@@ -97,7 +99,7 @@ def get_atc_letter_from_category(category_name):
 @st.cache_data
 def crear_grafo_completo(df):
     """Crear grafo completo con todos los fármacos"""
-    G = nx.MultiDiGraph()  # CAMBIADO A MultiDiGraph
+    G = nx.DiGraph()
     
     for _, row in df.iterrows():
         drug1 = row['Common_name_x']
@@ -130,11 +132,11 @@ def crear_grafo_completo(df):
                       num_atc=num_atc2,
                       tooltip=tooltip_info)
         
-        # SIEMPRE AGREGAR LA ARISTA - MultiDiGraph permite múltiples aristas entre los mismos nodos
-        edge_tooltip = f"<b>From:</b> {drug1} → <b>To:</b> {drug2}<br><b>Y Value:</b> {interaction_type}"
-        G.add_edge(drug1, drug2, 
-                  interaction_type=interaction_type,
-                  tooltip=edge_tooltip)
+        if not G.has_edge(drug1, drug2):
+            edge_tooltip = f"<b>From:</b> {drug1} → <b>To:</b> {drug2}"
+            G.add_edge(drug1, drug2, 
+                      interaction_type=interaction_type,
+                      tooltip=edge_tooltip)
     
     return G
 
@@ -209,17 +211,16 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
         return fig, None
     
     edges_to_keep = []
-    # CAMBIADO: MultiDiGraph requiere iterar con keys=True
-    for u, v, k in G.edges(keys=True):
+    for u, v in G.edges():
         if u in nodes_to_keep and v in nodes_to_keep:
-            edges_to_keep.append((u, v, k))
+            edges_to_keep.append((u, v))
     
-    G_filtered = nx.MultiDiGraph()  # CAMBIADO A MultiDiGraph
+    G_filtered = nx.DiGraph()
     for node in nodes_to_keep:
         G_filtered.add_node(node, **G.nodes[node])
     
-    for u, v, k in edges_to_keep:
-        G_filtered.add_edge(u, v, key=k, **G[u][v][k])
+    for u, v in edges_to_keep:
+        G_filtered.add_edge(u, v, **G[u][v])
     
     if farmaco_principal and farmaco_principal in G_filtered.nodes():
         pos = {}
@@ -268,8 +269,7 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
     
     edge_x, edge_y, edge_texts = [], [], []
     
-    # CAMBIADO: MultiDiGraph requiere data=True y keys=True
-    for u, v, k, data in G_filtered.edges(data=True, keys=True):
+    for u, v, data in G_filtered.edges(data=True):
         x0, y0 = pos[u]
         x1, y1 = pos[v]
         
@@ -311,11 +311,9 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
     )
     
     if farmaco_principal:
-        # CAMBIADO: Usar number_of_edges() para MultiDiGraph
-        title_text = f"Drug: {farmaco_principal}<br>Drugs: {len(G_filtered.nodes())} | Interactions: {G_filtered.number_of_edges()}"
+        title_text = f"Drug: {farmaco_principal}<br>Drugs: {len(G_filtered.nodes())} | Interactions: {len(G_filtered.edges())}"
     else:
-        # CAMBIADO: Usar number_of_edges() para MultiDiGraph
-        title_text = f"Complete Network<br>Drugs: {len(G_filtered.nodes())} | Interactions: {G_filtered.number_of_edges()}"
+        title_text = f"Complete Network<br>Drugs: {len(G_filtered.nodes())} | Interactions: {len(G_filtered.edges())}"
     
     fig = go.Figure(data=[edge_trace, node_trace],
                    layout=go.Layout(
@@ -345,13 +343,11 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
                    ))
     
     return fig, G_filtered
-
 st.title("**Drug-Drug interactions**")
-
 def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
     """Mostrar análisis detallado de interacciones con valores de 'Y'"""
     
-    if not G_filtrado or G_filtrado.number_of_edges() == 0:  # CAMBIADO: usar number_of_edges()
+    if not G_filtrado or len(G_filtrado.edges()) == 0:
         st.info("No interactions to analyze.")
         return
     
@@ -359,20 +355,18 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
     
     # Preparar datos para análisis
     interacciones_data = []
-    # CAMBIADO: MultiDiGraph requiere keys=True
-    for u, v, k, data in G_filtrado.edges(data=True, keys=True):
+    for u, v, data in G_filtrado.edges(data=True):
         y_value = data.get('interaction_type', 'N/A')
         interacciones_data.append({
             'From': u,
             'To': v,
             'Y Value': y_value,
-            'Direction': f"{u} → {v}",
-            'Edge Key': k  # Para identificar aristas múltiples
+            'Direction': f"{u} → {v}"
         })
     
     interacciones_df = pd.DataFrame(interacciones_data)
     
-    # Mostrar codigo de efecto
+    # Mostrar codigo de efecto (este se busca en el csv que pondré en la mismsa pag)
     st.write("**Effect by DDI code (Y):**")
     y_counts = interacciones_df['Y Value'].value_counts().sort_index()
     
@@ -397,8 +391,10 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
         # Ordenar por valor Y
         interacciones_df = interacciones_df.sort_values('Y Value')
         
+        # Agregar colores según valor Y
         def color_y_value(val):
-            return ''
+            
+         return ''
         
         styled_df = interacciones_df.style.applymap(
             color_y_value, subset=['Y Value']
@@ -463,6 +459,8 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
         else:
             incoming_df = None
             st.write("No incoming interactions.")
+        
+        
 
 def pestaña_visualizacion():
     """Pestaña principal de visualización de interacciones"""
@@ -478,6 +476,7 @@ def pestaña_visualizacion():
     # Sidebar para controles
     with st.sidebar:
         st.header("Controls")
+        
         
         all_drugs = sorted(set(df['Common_name_x'].tolist() + df['Common_name_y'].tolist()))
         
@@ -499,6 +498,8 @@ def pestaña_visualizacion():
         else:
             farmaco_principal = None
             G_actual = G_completo
+        
+        
         
         all_categories = set()
         for node in G_actual.nodes():
@@ -540,7 +541,7 @@ def pestaña_visualizacion():
                     unsafe_allow_html=True
                 )
         
-        # Botones de selección rápida
+        # Botones de selección r
         col1, col2 = st.columns(2)
         
         with col1:
@@ -571,8 +572,7 @@ def pestaña_visualizacion():
             with col1:
                 st.metric("Total Drugs in Dataset", len(G_completo.nodes()))
             with col2:
-                # CAMBIADO: Usar number_of_edges() para MultiDiGraph
-                st.metric("Total Interactions", G_completo.number_of_edges())
+                st.metric("Total Interactions", len(G_completo.edges()))
             
             category_counts = Counter()
             for node in G_completo.nodes():
@@ -609,15 +609,11 @@ def pestaña_visualizacion():
             with col1:
                 st.metric("Displayed Drugs", len(G_filtrado.nodes()))
             with col2:
-                # CAMBIADO: Usar number_of_edges() para MultiDiGraph
-                st.metric("Displayed Interactions", G_filtrado.number_of_edges())
+                st.metric("Displayed Interactions", len(G_filtrado.edges()))
             with col3:
                 if farmaco_principal:
-                    # CAMBIADO: Para MultiDiGraph, calcular grado total
-                    in_degree = G_filtrado.in_degree(farmaco_principal)
-                    out_degree = G_filtrado.out_degree(farmaco_principal)
-                    total_connections = in_degree + out_degree
-                    st.metric(f"Connections of {farmaco_principal}", total_connections)
+                    degree = G_filtrado.degree(farmaco_principal)
+                    st.metric(f"Connections of {farmaco_principal}", degree)
             
             # Mostrar análisis de interacciones
             mostrar_analisis_interacciones(G_filtrado, farmaco_principal)
@@ -636,10 +632,74 @@ def pestaña_visualizacion():
                             unsafe_allow_html=True
                         )
 
+
+   
+
 def pestaña_significado_y():
-    st.title("Dataset, meaning of Y values")
+    st.title("Dataset, menaing of Y values")
     st.header('Dataset')
-    st.dataframe(meeaning_y, use_container_width=True)
+    st.dataframe(meeaning_y,use_container_width=True)
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def pestaña_esenciales():
     """Pestaña simple para fármacos esenciales"""
@@ -683,6 +743,7 @@ def pestaña_esenciales():
     with col1:
         st.metric("Total Essential Drugs", len(farmacos_pais))
     
+    
     codigos_atc_esenciales = set()
     
     codigos_atc_esenciales.update(farmacos_pais['ATC code primary'].dropna().unique())
@@ -697,6 +758,10 @@ def pestaña_esenciales():
     
     codigos_atc_esenciales = {codigo.strip() for codigo in codigos_atc_esenciales 
                               if pd.notna(codigo) and codigo.strip() != ''}
+    
+    #with col2:
+        #st.metric("Unique ATC Codes", len(codigos_atc_esenciales))
+    
     
     def verificar_farmaco(atc_code, num_atc):
         if pd.isna(atc_code) or atc_code == 'No ATC' or num_atc == 0:
@@ -715,6 +780,10 @@ def pestaña_esenciales():
     # Contar cuántos son esenciales
     esencial_x_count = df['esencial_x'].sum()
     esencial_y_count = df['esencial_y'].sum()
+    
+    #with col3:
+        #st.metric("Drugs in DDIBUENO", esencial_x_count + esencial_y_count)
+    
     
     farmacos_esenciales_lista = []
     
@@ -754,6 +823,7 @@ def pestaña_esenciales():
     # Ordenar por nombre
     df_farmacos_esenciales = df_farmacos_esenciales.sort_values('Common_Name')
     
+    
     st.subheader(f"Essential Drugs from {pais_seleccionado} found in DDIBUENO")
     
     # Mostrar tabla principal
@@ -777,6 +847,10 @@ def pestaña_esenciales():
         st.metric("From Column X", len(df_farmacos_esenciales[df_farmacos_esenciales['Source'] == 'Column X']))
     with col3:
         st.metric("From Column Y", len(df_farmacos_esenciales[df_farmacos_esenciales['Source'] == 'Column Y']))
+    #with col4:
+       # unique_drugs = set(df_farmacos_esenciales['Common_Name'])
+        #st.metric("Unique Drug Names", len(unique_drugs))
+    
     
     st.subheader("Distribution by ATC Group")
     
@@ -790,23 +864,23 @@ def pestaña_esenciales():
     df_farmacos_esenciales['ATC_Group'] = df_farmacos_esenciales['ATC_Code'].apply(extraer_grupo_atc)
     
     ATC_GROUP_NAMES = {
-        'A': 'ALIMENTARY TRACT AND METABOLISM',
-        'B': 'BLOOD AND BLOOD FORMING ORGANS',
-        'C': 'CARDIOVASCULAR SYSTEM',
-        'D': 'DERMATOLOGICALS',
-        'G': 'GENITO URINARY SYSTEM AND SEX HORMONES',
-        'H': 'SYSTEMIC HORMONAL PREPARATIONS, EXCL. SEX HORMONES AND INSULINS',
-        'J': 'ANTIINFECTIVES FOR SYSTEMIC USE',
-        'L': 'ANTINEOPLASTIC AND IMMUNOMODULATING AGENTS',
-        'M': 'MUSCULO-SKELETAL SYSTEM',
-        'N': 'NERVOUS SYSTEM',
-        'P': 'ANTIPARASITIC PRODUCTS, INSECTICIDES AND REPELLENTS',
-        'R': 'RESPIRATORY SYSTEM',
-        'S': 'SENSORY ORGANS',
-        'V': 'VARIOUS',
-        'Sin ATC': 'No ATC',
-        'Multi ATC': 'Multi ATC'
-    }
+    'A': 'ALIMENTARY TRACT AND METABOLISM',
+    'B': 'BLOOD AND BLOOD FORMING ORGANS',
+    'C': 'CARDIOVASCULAR SYSTEM',
+    'D': 'DERMATOLOGICALS',
+    'G': 'GENITO URINARY SYSTEM AND SEX HORMONES',
+    'H': 'SYSTEMIC HORMONAL PREPARATIONS, EXCL. SEX HORMONES AND INSULINS',
+    'J': 'ANTIINFECTIVES FOR SYSTEMIC USE',
+    'L': 'ANTINEOPLASTIC AND IMMUNOMODULATING AGENTS',
+    'M': 'MUSCULO-SKELETAL SYSTEM',
+    'N': 'NERVOUS SYSTEM',
+    'P': 'ANTIPARASITIC PRODUCTS, INSECTICIDES AND REPELLENTS',
+    'R': 'RESPIRATORY SYSTEM',
+    'S': 'SENSORY ORGANS',
+    'V': 'VARIOUS',
+    'Sin ATC': 'No ATC',
+    'Multi ATC': 'Multi ATC'
+}
     
     # Crear DataFrame para distribución
     distribucion = df_farmacos_esenciales['ATC_Group'].value_counts().reset_index()
@@ -832,6 +906,7 @@ def pestaña_esenciales():
             use_container_width=True,
             hide_index=True
         )
+    
     
     st.subheader("Interactions Involving Essential Drugs")
     
@@ -909,28 +984,34 @@ def pestaña_esenciales():
     
     else:
         st.info("No interactions found involving these essential drugs")
+    
 
 def about():
     st.title("About this web page")
-    st.write("This application has been developed to visualize drug-drug interactions using network graphs. It allows user to navigate through a large dataset of drugs and their interactions.")
-    st.write("We showcase essential drugs as defined by the World Health Organization (WHO) and compare them with the dataset DDI, to identify which essential drugs have known interactions.")
+    st.write("This application has been developed to visualize drug-drug interactions using network graphs. It allows user to navigate trhough a large dataset of drugs and their interactions.")
+    st.write("We showcase essential drugs as defined by the World Healt Organization (WHO) and compare them with the dataset DDI, to identify which essential drugs have kwon interactions.")
     st.markdown(
-        "The DDI dataset was obtained from <a href='https://tdcommons.ai/'>Therapeutic Data Commons</a>",
-        unsafe_allow_html=True
+    "The DDI dataset was obtained from <a href='https://tdcommons.ai/'>Therapeutic Data Commons</a>",
+    unsafe_allow_html=True
     )
+
     st.markdown(
-        "The essential drug list was obtained from <a href='https://pmc.ncbi.nlm.nih.gov/articles/PMC6560372/pdf/BLT.18.222448.pdf'>Comparison of essential medicines lists in 137 countries</a>",
-        unsafe_allow_html=True
+    "The essential drug list was obtained from <a href='https://pmc.ncbi.nlm.nih.gov/articles/PMC6560372/pdf/BLT.18.222448.pdf'>Comparison of essential medicines lists in 137 countries</a>",
+    unsafe_allow_html=True
     )
+
 
 def main():
     # Crear pestañas de navegación
     tab1, tab2, tab3, tab4 = st.tabs([
+
         "Network interactions Visualization", 
         "Essentials",
         "Y dataset",
         "About"
     ])
+    
+    
     
     with tab1:
         pestaña_visualizacion()
