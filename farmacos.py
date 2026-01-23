@@ -843,10 +843,10 @@ def pestaña_esenciales():
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.metric("Unique Essential Drugs", len(df_farmacos_esenciales))
-    with col2:
-        st.metric("From Column X", len(df_farmacos_esenciales[df_farmacos_esenciales['Source'] == 'Column X']))
-    with col3:
-        st.metric("From Column Y", len(df_farmacos_esenciales[df_farmacos_esenciales['Source'] == 'Column Y']))
+    #with col2:
+       # st.metric("From Column X", len(df_farmacos_esenciales[df_farmacos_esenciales['Source'] == 'Column X']))
+   # with col3:
+       # st.metric("From Column Y", len(df_farmacos_esenciales[df_farmacos_esenciales['Source'] == 'Column Y']))
     #with col4:
        # unique_drugs = set(df_farmacos_esenciales['Common_Name'])
         #st.metric("Unique Drug Names", len(unique_drugs))
