@@ -352,22 +352,15 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
         return
     
     st.subheader("Interaction Analysis")
-    y_to_description = {}
-    for _, row in meeaning_y.iterrows():
-        y_value = row['Y']
-        description = row['Description']
-        y_to_description[y_value] = description
     
     # Preparar datos para análisis
     interacciones_data = []
     for u, v, data in G_filtrado.edges(data=True):
         y_value = data.get('interaction_type', 'N/A')
-        description = y_to_description.get(y_value)
-
         interacciones_data.append({
             'From': u,
             'To': v,
-            'Effect description': description,
+            'Y Value': y_value,
             'Direction': f"{u} → {v}"
         })
     
