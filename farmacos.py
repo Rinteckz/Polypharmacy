@@ -447,7 +447,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
             st.write(f"**{farmaco_principal} to drug B ({len(outgoing)}):**")
             outgoing_df = pd.DataFrame(outgoing)
             st.dataframe(
-                outgoing_df.sort_values('Y Value'),
+                outgoing_df.sort_values('Effect description'),
                 use_container_width=True,
                 hide_index=True
             )
