@@ -428,7 +428,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
             if row['From'] == farmaco_principal:
                 outgoing.append({
                     'Target': row['To'],
-                    'Y Value': row['Y Value'],
+                    'Effect Description': y_to_description.get(row['Y Value']),
                     'Type': 'Outgoing'
                 })
         
@@ -438,7 +438,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
             if row['To'] == farmaco_principal:
                 incoming.append({
                     'Source': row['From'],
-                    'Y Value': row['Y Value'],
+                    'Effect Description': y_to_description.get(row['Y Value']),
                     'Type': 'Incoming'
                 })
         
