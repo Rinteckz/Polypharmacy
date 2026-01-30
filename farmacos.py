@@ -1019,7 +1019,61 @@ def about():
     unsafe_allow_html=True
     )
 
-    st.markdown("This web-page has been developed by Adolfo Guzmán Arenas, Jorge Luis Chavez Perez, Gilberto Lorenzo Martínez Luna y Edgardo ALberto Marin Colli")
+    st.markdown("This web-page has been developed by Adolfo Guzmán Arenas, Jorge Luis Chavez Perez, Gilberto Lorenzo Martínez Luna and Edgardo Alberto Marin Colli")
+
+    import streamlit as st
+
+
+    st.markdown("""
+    <style>
+    .author {
+        text-align: center;
+    }
+    .author img {
+        border-radius: 50%;
+        width: 150px;
+        height: 150px;
+        object-fit: cover;
+    }
+    .author-name {
+        margin-top: 10px;
+        font-weight: 600;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("""
+        <div class="author">
+            <img src="https://raw.githubusercontent.com/Rinteckz/Polypharmacy/2c0d3da12bc69ef6ae05c119b78bf4e2cdeb7958/images/arenas.jpeg">
+            <div class="author-name">Autor 1</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col2:
+        st.markdown("""
+        <div class="author">
+            <img src="https://via.placeholder.com/300">
+            <div class="author-name">Autor 2</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Espacio vertical
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # --- FILA DE ABAJO (1 autor centrado) ---
+    col_center = st.columns([1, 2, 1])[1]
+
+    with col_center:
+        st.markdown("""
+        <div class="author">
+            <img src="https://via.placeholder.com/300">
+            <div class="author-name">Autor 3</div>
+        </div>
+        """, unsafe_allow_html=True)
+
 
 
 
