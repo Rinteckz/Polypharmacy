@@ -1054,7 +1054,7 @@ def about():
     with col2:
         st.markdown("""
         <div class="author">
-            <img src="https://via.placeholder.com/300">
+            <img src="https://raw.githubusercontent.com/Rinteckz/Polypharmacy/85545c737401fbcea139a74d6d9f912c95fd77f9/images/Luna.jpeg">
             <div class="author-name">Autor 2</div>
         </div>
         """, unsafe_allow_html=True)
@@ -1068,7 +1068,7 @@ def about():
     with col_center:
         st.markdown("""
         <div class="author">
-            <img src="https://via.placeholder.com/300">
+            <img src="https://raw.githubusercontent.com/Rinteckz/Polypharmacy/e95b3aa527101e1828b7be214ffa9c54396d4608/images/yo2.png">
             <div class="author-name">Autor 3</div>
         </div>
         """, unsafe_allow_html=True)
