@@ -433,7 +433,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
         outgoing = []
         for _, row in interacciones_df.iterrows():
             if row['From'] == farmaco_principal:
-                y_val = row['Y Value']
+                y_val = row['Effect description']
                 outgoing.append({
                     'Target': row['To'],
                     'Effect description': y_to_description.get(y_val, f"Y={y_val} (Unknown)"),
@@ -444,7 +444,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
         incoming = []
         for _, row in interacciones_df.iterrows():
             if row['To'] == farmaco_principal:
-                y_val = row['Y Value']
+                y_val = row['Effect description']
                 incoming.append({
                     'Source': row['From'],
                     'Effect description': y_to_description.get(y_val, f"Y={y_val} (Unknown)"),
