@@ -426,10 +426,10 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
         outgoing = []
         for _, row in interacciones_df.iterrows():
             if row['From'] == farmaco_principal:
-                y_val=row['Y Value']
+                y_val = row['Y Value']
                 outgoing.append({
                     'Target': row['To'],
-                    'Effect description': y_to_description.get(y_val),
+                    'Effect description': y_to_description.get(y_val, f"Y={y_val} (Unknown)"),
                     'Type': 'Outgoing'
                 })
         
@@ -437,34 +437,49 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
         incoming = []
         for _, row in interacciones_df.iterrows():
             if row['To'] == farmaco_principal:
+                y_val = row['Y Value']
                 incoming.append({
                     'Source': row['From'],
-                    'Effect description': y_to_description.get(y_val),
+                    'Effect description': y_to_description.get(y_val, f"Y={y_val} (Unknown)"),
                     'Type': 'Incoming'
                 })
         
         if outgoing:
             st.write(f"**{farmaco_principal} to drug B ({len(outgoing)}):**")
             outgoing_df = pd.DataFrame(outgoing)
+            
+            # Mostrar solo Target y Effect description
+            display_outgoing = outgoing_df[['Target', 'Effect description']].copy()
+            
             st.dataframe(
-                outgoing_df.sort_values('Effect description'),
+                display_outgoing,
                 use_container_width=True,
+                column_config={
+                    "Target": st.column_config.TextColumn("Target Drug", width="medium"),
+                    "Effect description": st.column_config.TextColumn("Effect", width="large")
+                },
                 hide_index=True
             )
         else:
-            outgoing_df = None
             st.write("No outgoing interactions.")
         
         if incoming:
             st.write(f"**Drug A to {farmaco_principal} ({len(incoming)}):**")
             incoming_df = pd.DataFrame(incoming)
+            
+            # Mostrar solo Source y Effect description
+            display_incoming = incoming_df[['Source', 'Effect description']].copy()
+            
             st.dataframe(
-                incoming_df.sort_values('Effect description'),
+                display_incoming,
                 use_container_width=True,
+                column_config={
+                    "Source": st.column_config.TextColumn("Source Drug", width="medium"),
+                    "Effect description": st.column_config.TextColumn("Effect", width="large")
+                },
                 hide_index=True
             )
         else:
-            incoming_df = None
             st.write("No incoming interactions.")
         
         
