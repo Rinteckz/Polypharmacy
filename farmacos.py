@@ -352,23 +352,30 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
         return
     
     st.subheader("Interaction Analysis")
+    y_to_description = {}
+    for _, row in meeaning_y.iterrows():
+        y_value = row['Y']
+        description = row['Description']
+        y_to_description[y_value] = description
     
     # Preparar datos para análisis
     interacciones_data = []
     for u, v, data in G_filtrado.edges(data=True):
         y_value = data.get('interaction_type', 'N/A')
+        description = y_to_description.get(y_value)
+
         interacciones_data.append({
             'From': u,
             'To': v,
-            'Y Value': y_value,
+            'Effect description': description,
             'Direction': f"{u} → {v}"
         })
     
     interacciones_df = pd.DataFrame(interacciones_data)
     
     # Mostrar codigo de efecto (este se busca en el csv que pondré en la mismsa pag)
-    st.write("**Effect by DDI code (Y):**")
-    y_counts = interacciones_df['Y Value'].value_counts().sort_index()
+    st.write("**DDI interaction:**")
+    y_counts = interacciones_df['Effect description'].value_counts().sort_index()
     
     col1, col2 = st.columns(2)
     
