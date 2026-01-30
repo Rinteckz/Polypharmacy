@@ -357,16 +357,26 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
     interacciones_data = []
     for u, v, data in G_filtrado.edges(data=True):
         y_value = data.get('interaction_type', 'N/A')
+        
+        # Buscar el significado del valor Y en meeaning_y
+        significado_y = "Unknown"
+        if pd.notna(y_value):
+            # Buscar en el dataset meeaning_y
+            significado_df = meeaning_y[meeaning_y['Y'] == y_value]
+            if not significado_df.empty:
+                significado_y = significado_df['polypharmacy side effect'].iloc[0]
+        
         interacciones_data.append({
             'From': u,
             'To': v,
             'Y Value': y_value,
+            'Significado Y': significado_y,  # Nueva columna con el significado
             'Direction': f"{u} → {v}"
         })
     
     interacciones_df = pd.DataFrame(interacciones_data)
     
-    # Mostrar codigo de efecto (este se busca en el csv que pondré en la mismsa pag)
+    # Mostrar codigo de efecto
     st.write("**Effect by DDI code (Y):**")
     y_counts = interacciones_df['Y Value'].value_counts().sort_index()
     
@@ -375,28 +385,58 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
     with col1:
         for y_val, count in y_counts.items():
             percentage = (count / len(interacciones_df)) * 100
+            
+            # Obtener significado para mostrar
+            significado = "Unknown"
+            significado_df = meeaning_y[meeaning_y['Y'] == y_val]
+            if not significado_df.empty:
+                significado = significado_df['polypharmacy side effect'].iloc[0]
+            
             st.write(f"**Y = {y_val}:** {count} interactions ({percentage:.1f}%)")
+            st.write(f"  *{significado}*")
     
     with col2:
         if len(y_counts) > 0:
+            # Crear nombres para el gráfico que incluyan significado
+            nombres_pie = []
+            for k in y_counts.index:
+                significado_df = meeaning_y[meeaning_y['Y'] == k]
+                if not significado_df.empty:
+                    significado = significado_df['polypharmacy side effect'].iloc[0]
+                    # Acortar si es muy largo para el gráfico
+                    if len(significado) > 40:
+                        nombres_pie.append(f"Y={k}: {significado[:37]}...")
+                    else:
+                        nombres_pie.append(f"Y={k}: {significado}")
+                else:
+                    nombres_pie.append(f"Y={k}")
+            
             fig_pie = px.pie(
                 values=y_counts.values,
-                names=[f"Y = {k}" for k in y_counts.index],
+                names=nombres_pie,
                 title="Distribution of Y Values",
-                color_discrete_sequence=px.colors.qualitative.Set3
+                color_discrete_sequence=px.colors.qualitative.Set3,
+                height=600
             )
             st.plotly_chart(fig_pie, use_container_width=True)
     
     with st.expander("All Interactions in the network", expanded=False):
-        # Ordenar por valor Y
         interacciones_df = interacciones_df.sort_values('Y Value')
         
-        # Agregar colores según valor Y
-        def color_y_value(val):
-            
-         return ''
+        # Crear una versión modificada del DataFrame para mostrar
+        display_df = interacciones_df.copy()
         
-        styled_df = interacciones_df.style.applymap(
+        # Reemplazar el valor Y numérico por su significado
+        display_df['Y Value'] = display_df['Significado Y']
+        
+        # Agregar colores según el valor Y original
+        def color_y_value(val):
+            if isinstance(val, str):
+                # Mapear a colores basados en el significado o valor original
+                return ''
+            return ''
+        
+        styled_df = display_df.style.applymap(
             color_y_value, subset=['Y Value']
         )
         
@@ -406,8 +446,8 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
             column_config={
                 "From": st.column_config.TextColumn("From (Drug A)", width="medium"),
                 "To": st.column_config.TextColumn("To (Drug B)", width="medium"),
-                "Y Value": st.column_config.NumberColumn("Y Value", width="small"),
-                "Direction": st.column_config.TextColumn("Direction", width="large")
+                "Y Value": st.column_config.TextColumn("Effect", width="large"),  # Cambiado a TextColumn
+                "Direction": st.column_config.TextColumn("Direction", width="medium")
             },
             hide_index=True
         )
@@ -423,6 +463,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
                 outgoing.append({
                     'Target': row['To'],
                     'Y Value': row['Y Value'],
+                    'Effect': row['Significado Y'],  # Mostrar significado
                     'Type': 'Outgoing'
                 })
         
@@ -433,40 +474,56 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
                 incoming.append({
                     'Source': row['From'],
                     'Y Value': row['Y Value'],
+                    'Effect': row['Significado Y'],  # Mostrar significado
                     'Type': 'Incoming'
                 })
         
         if outgoing:
             st.write(f"**{farmaco_principal} to drug B ({len(outgoing)}):**")
             outgoing_df = pd.DataFrame(outgoing)
+            
+            # Reemplazar Y Value por Effect para mostrar
+            outgoing_display = outgoing_df.copy()
+            if 'Effect' in outgoing_display.columns:
+                outgoing_display['Y Value'] = outgoing_display['Effect']
+            
             st.dataframe(
-                outgoing_df.sort_values('Y Value'),
+                outgoing_display[['Target', 'Y Value']].sort_values('Y Value'),
                 use_container_width=True,
+                column_config={
+                    "Target": st.column_config.TextColumn("Target Drug", width="medium"),
+                    "Y Value": st.column_config.TextColumn("Effect", width="large")
+                },
                 hide_index=True
             )
         else:
-            outgoing_df = None
             st.write("No outgoing interactions.")
         
         if incoming:
             st.write(f"**Drug A to {farmaco_principal} ({len(incoming)}):**")
             incoming_df = pd.DataFrame(incoming)
+            
+            # Reemplazar Y Value por Effect para mostrar
+            incoming_display = incoming_df.copy()
+            if 'Effect' in incoming_display.columns:
+                incoming_display['Y Value'] = incoming_display['Effect']
+            
             st.dataframe(
-                incoming_df.sort_values('Y Value'),
+                incoming_display[['Source', 'Y Value']].sort_values('Y Value'),
                 use_container_width=True,
+                column_config={
+                    "Source": st.column_config.TextColumn("Source Drug", width="medium"),
+                    "Y Value": st.column_config.TextColumn("Effect", width="large")
+                },
                 hide_index=True
             )
         else:
-            incoming_df = None
             st.write("No incoming interactions.")
-        
         
 
 def pestaña_visualizacion():
-    """Pestaña principal de visualización de interacciones"""
     st.title("Drug-Drug Interaction Network Visualization")
     
-    # Inicializar estado de sesión
     if 'G_completo' not in st.session_state:
         with st.spinner("Loading drug interaction data..."):
             st.session_state.G_completo = crear_grafo_completo(df)
@@ -834,7 +891,6 @@ def pestaña_esenciales():
         hide_index=True
     )
     
-    # Mostrar estadísticas detalladas
     st.subheader("Detailed Statistics")
     
     col1, col2, col3, col4 = st.columns(4)
