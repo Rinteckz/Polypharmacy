@@ -406,7 +406,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
             y_to_description[y_value] = description
         
         # Agregar columna con la descripción del Y
-        interacciones_df['Effect Description'] = interacciones_df['Y Value'].apply(
+        interacciones_df['Effect Description'] = interacciones_df['Effect description'].apply(
             lambda y: y_to_description.get(y, f"Y={y} (Unknown)")
         )
         
