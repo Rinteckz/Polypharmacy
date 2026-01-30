@@ -1047,7 +1047,7 @@ def about():
         st.markdown("""
         <div class="author">
             <img src="https://raw.githubusercontent.com/Rinteckz/Polypharmacy/2c0d3da12bc69ef6ae05c119b78bf4e2cdeb7958/images/arenas.jpeg">
-            <div class="author-name">Autor 1</div>
+            <div class="author-name">Adolfo Guzmán Arenas</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -1055,7 +1055,7 @@ def about():
         st.markdown("""
         <div class="author">
             <img src="https://raw.githubusercontent.com/Rinteckz/Polypharmacy/85545c737401fbcea139a74d6d9f912c95fd77f9/images/Luna.jpeg">
-            <div class="author-name">Autor 2</div>
+            <div class="author-name">Gilberto Lorenzo Martínez Luna</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -1069,7 +1069,7 @@ def about():
         st.markdown("""
         <div class="author">
             <img src="https://raw.githubusercontent.com/Rinteckz/Polypharmacy/e95b3aa527101e1828b7be214ffa9c54396d4608/images/yo2.png">
-            <div class="author-name">Autor 3</div>
+            <div class="author-name">Edgardo Alberto Marin Colli</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -1114,6 +1114,7 @@ def manual():
 
     with manual_tabs[1]:
         st.write("In this section, you can choose a country to see which of its essential drugs are included in the DDI dataset. The total number of essential drugs is shown first. For example if you choose Mexico, you can see that Mexico has 706 essentials drugs according to the WHO")
+        st.write("We Know as essential medicines are those that effectively and safely adress the priority health care needs of the population. These medicines are selected based on their relevance to public health and the available evidence regarding their benefits and potential harms, as well as taking into account cost, affordability, and other relevant factors.")
         st.image("images/11f.png")
         st.write("The essential drugs of the selected country (in this case, Mexico) that are included in the DDI dataset are shown in the following table.")
         st.image("images/12f.png")
