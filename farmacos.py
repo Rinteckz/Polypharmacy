@@ -357,6 +357,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
     interacciones_data = []
     for u, v, data in G_filtrado.edges(data=True):
         y_value = data.get('interaction_type', 'N/A')
+
         interacciones_data.append({
             'From': u,
             'To': v,
@@ -383,34 +384,51 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
                 values=y_counts.values,
                 names=[f"Y = {k}" for k in y_counts.index],
                 title="Distribution of Y Values",
-                color_discrete_sequence=px.colors.qualitative.Set3
+                color_discrete_sequence=px.colors.qualitative.Set3,
+                height=600
             )
             st.plotly_chart(fig_pie, use_container_width=True)
     
     with st.expander("All Interactions in the network", expanded=False):
-        # Ordenar por valor Y
         interacciones_df = interacciones_df.sort_values('Y Value')
+        meeaning_y=meeaning_y.sort_values('Description') 
         
-        # Agregar colores según valor Y
-        def color_y_value(val):
-            
-         return ''
+    # Crear diccionario de mapeo Y -> Description
+        y_to_description = {}
+        for _, row in meeaning_y.iterrows():
+            y_value = row['Y']
+            description = row['Description']
+            y_to_description[y_value] = description
         
-        styled_df = interacciones_df.style.applymap(
-            color_y_value, subset=['Y Value']
+        # Agregar columna con la descripción del Y
+        interacciones_df['Effect Description'] = interacciones_df['Y Value'].apply(
+            lambda y: y_to_description.get(y, f"Y={y} (Unknown)")
         )
         
+        # Mostrar solo las columnas necesarias
+        display_df = interacciones_df[['From', 'To', 'Effect Description', 'Direction']].copy()
+        
         st.dataframe(
-            styled_df,
+            display_df,
             use_container_width=True,
             column_config={
                 "From": st.column_config.TextColumn("From (Drug A)", width="medium"),
                 "To": st.column_config.TextColumn("To (Drug B)", width="medium"),
-                "Y Value": st.column_config.NumberColumn("Y Value", width="small"),
-                "Direction": st.column_config.TextColumn("Direction", width="large")
+                "Effect Description": st.column_config.TextColumn("Effect Description", width="large"),
+                "Direction": st.column_config.TextColumn("Direction", width="medium")
             },
             hide_index=True
         )
+
+
+
+
+
+
+
+
+
+       
     
     # Análisis por fármaco principal
     if farmaco_principal:
@@ -463,10 +481,8 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
         
 
 def pestaña_visualizacion():
-    """Pestaña principal de visualización de interacciones"""
     st.title("Drug-Drug Interaction Network Visualization")
     
-    # Inicializar estado de sesión
     if 'G_completo' not in st.session_state:
         with st.spinner("Loading drug interaction data..."):
             st.session_state.G_completo = crear_grafo_completo(df)
@@ -834,7 +850,6 @@ def pestaña_esenciales():
         hide_index=True
     )
     
-    # Mostrar estadísticas detalladas
     st.subheader("Detailed Statistics")
     
     col1, col2, col3, col4 = st.columns(4)
@@ -1079,4 +1094,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-       
