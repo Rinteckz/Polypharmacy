@@ -352,30 +352,23 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
         return
     
     st.subheader("Interaction Analysis")
-    y_to_description = {}
-    for _, row in meeaning_y.iterrows():
-        y_value = row['Y']
-        description = row['Description']
-        y_to_description[y_value] = description
     
     # Preparar datos para análisis
     interacciones_data = []
     for u, v, data in G_filtrado.edges(data=True):
         y_value = data.get('interaction_type', 'N/A')
-        description = y_to_description.get(y_value)
-
         interacciones_data.append({
             'From': u,
             'To': v,
-            'Effect description': description,
+            'Y Value': y_value,
             'Direction': f"{u} → {v}"
         })
     
     interacciones_df = pd.DataFrame(interacciones_data)
     
     # Mostrar codigo de efecto (este se busca en el csv que pondré en la mismsa pag)
-    st.write("**DDI interaction:**")
-    y_counts = interacciones_df['Effect description'].value_counts().sort_index()
+    st.write("**Effect by DDI code (Y):**")
+    y_counts = interacciones_df['Y Value'].value_counts().sort_index()
     
     col1, col2 = st.columns(2)
     
@@ -396,7 +389,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
     
 
     with st.expander("All Interactions in the network", expanded=False):
-        interacciones_df = interacciones_df.sort_values('Effect description')
+        interacciones_df = interacciones_df.sort_values('Y Value')
         
         # Crear diccionario de mapeo Y -> Description
         y_to_description = {}
@@ -406,7 +399,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
             y_to_description[y_value] = description
         
         # Agregar columna con la descripción del Y
-        interacciones_df['Effect Description'] = interacciones_df['Effect description'].apply(
+        interacciones_df['Effect Description'] = interacciones_df['Y Value'].apply(
             lambda y: y_to_description.get(y, f"Y={y} (Unknown)")
         )
         
