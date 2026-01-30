@@ -428,7 +428,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
             if row['From'] == farmaco_principal:
                 outgoing.append({
                     'Target': row['To'],
-                    'Y Value': row['Y Value'],
+                    'Description': y_to_description.get(row['Y']),
                     'Type': 'Outgoing'
                 })
         
@@ -438,15 +438,17 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
             if row['To'] == farmaco_principal:
                 incoming.append({
                     'Source': row['From'],
-                    'Y Value': row['Y Value'],
+                    'Description': y_to_description.get(row['Y']),
                     'Type': 'Incoming'
                 })
         
         if outgoing:
             st.write(f"**{farmaco_principal} to drug B ({len(outgoing)}):**")
             outgoing_df = pd.DataFrame(outgoing)
+            display_outgoing = outgoing_df[['Target', 'Effect Description']].copy()
+
             st.dataframe(
-                outgoing_df.sort_values('Y Value'),
+                display_outgoing,
                 use_container_width=True,
                 hide_index=True
             )
