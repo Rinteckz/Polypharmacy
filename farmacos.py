@@ -396,7 +396,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
     
 
     with st.expander("All Interactions in the network", expanded=False):
-        interacciones_df = interacciones_df.sort_values('Y Value')
+        interacciones_df = interacciones_df.sort_values('Effect description')
         
         # Crear diccionario de mapeo Y -> Description
         y_to_description = {}
