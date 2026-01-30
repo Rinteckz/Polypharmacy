@@ -1021,7 +1021,6 @@ def about():
 
     st.markdown("This web-page has been developed by Adolfo Guzmán Arenas, Jorge Luis Chavez Perez, Gilberto Lorenzo Martínez Luna and Edgardo Alberto Marin Colli")
 
-    import streamlit as st
 
 
     st.markdown("""
