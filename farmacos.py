@@ -344,7 +344,7 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
     
     return fig, G_filtered
 st.title("**Drug-Drug interactions**")
-def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
+def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
     """Mostrar análisis detallado de interacciones con valores de 'Y'"""
     
     if not G_filtrado or len(G_filtrado.edges()) == 0:
@@ -389,11 +389,9 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
     
 
     with st.expander("All Interactions in the network", expanded=False):
-        # Ordenar los DataFrames
         interacciones_df = interacciones_df.sort_values('Y Value')
-        meeaning_y = meeaning_y.sort_values('Description')
         
-        # Crear un diccionario de mapeo Y -> Description
+        # Crear diccionario de mapeo Y -> Description
         y_to_description = {}
         for _, row in meeaning_y.iterrows():
             y_value = row['Y']
@@ -401,45 +399,20 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal):
             y_to_description[y_value] = description
         
         # Agregar columna con la descripción del Y
-        interacciones_df['Y Description'] = interacciones_df['Y Value'].apply(
+        interacciones_df['Effect Description'] = interacciones_df['Y Value'].apply(
             lambda y: y_to_description.get(y, f"Y={y} (Unknown)")
         )
         
-        # Agregar colores según valor Y
-        def color_y_value(val):
-            # Puedes personalizar los colores según los valores de Y
-            color_map = {
-                0: 'background-color: #90EE90',  # Verde claro para Y=0
-                1: 'background-color: #FFFFE0',  # Amarillo claro para Y=1
-                2: 'background-color: #FFDAB9',  # Naranja claro para Y=2
-                3: 'background-color: #FFB6C1',  # Rosa claro para Y=3
-                4: 'background-color: #FFA07A',  # Naranja para Y=4
-                5: 'background-color: #E6E6FA',  # Lavanda para Y=5
-            }
-            
-            # Si val es la descripción, extraer el valor Y original
-            if isinstance(val, str):
-                # Buscar el valor Y en el string de descripción
-                for y_val, desc in y_to_description.items():
-                    if desc == val:
-                        return color_map.get(y_val, '')
-            return ''
-        
-        # Crear DataFrame para mostrar (solo con las columnas necesarias)
-        display_df = interacciones_df[['From', 'To', 'Y Description', 'Direction']].copy()
-        
-        # Aplicar estilos
-        styled_df = display_df.style.applymap(
-            color_y_value, subset=['Y Description']
-        )
+        # Mostrar solo las columnas necesarias
+        display_df = interacciones_df[['From', 'To', 'Effect Description', 'Direction']].copy()
         
         st.dataframe(
-            styled_df,
+            display_df,
             use_container_width=True,
             column_config={
                 "From": st.column_config.TextColumn("From (Drug A)", width="medium"),
                 "To": st.column_config.TextColumn("To (Drug B)", width="medium"),
-                "Y Description": st.column_config.TextColumn("Effect Description", width="large"),
+                "Effect Description": st.column_config.TextColumn("Effect Description", width="large"),
                 "Direction": st.column_config.TextColumn("Direction", width="medium")
             },
             hide_index=True
@@ -646,7 +619,7 @@ def pestaña_visualizacion():
             
             
             # Mostrar análisis de interacciones
-            mostrar_analisis_interacciones(G_filtrado, farmaco_principal)
+            mostrar_analisis_interacciones(G_filtrado, farmaco_principal,meeaning_y)
         
         if G_filtrado and len(G_filtrado.nodes()) > 0:
             with st.expander("View list of displayed drugs", expanded=False):
