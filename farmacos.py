@@ -1087,10 +1087,10 @@ def manual():
     
     Click on any section below to jump directly to it:
     
-    **🔹 Introduction**
+    **- Introduction**
     - [Overview](#overview)
     
-    **🔹 Network Visualization**
+    **- Network Visualization**
     - [Main Page](#main-page)
     - [Sidebar Controls](#sidebar-controls)
     - [ATC Filtering](#atc-filtering)
@@ -1098,12 +1098,12 @@ def manual():
     - [Graph Interaction](#graph-interaction)
     - [Statistics & Tables](#statistics-tables)
     
-    **🔹 Essential Drugs**
+    **-  Essential Drugs**
     - [Country Selection](#country-selection)
     - [Essential Medicines](#essential-medicines)
     - [Results View](#results-view)
     
-    **🔹 About Y Code**
+    **-  About Y Code**
     - [Y Code System](#y-code-system)
     
     ---
@@ -1123,7 +1123,7 @@ def manual():
 
 # ----------------- SECCIÓN 1 -----------------
 def show_intro():
-    st.header("🔹 Introduction")
+    st.header("-  Introduction")
 
     st.markdown("""
     <a id="overview"></a>
