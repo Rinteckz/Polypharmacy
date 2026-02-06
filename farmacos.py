@@ -1076,48 +1076,244 @@ def about():
 
 
 
-
-
 def manual():
-    
-    st.title("Users Manual")
-    st.markdown("This web application is designed to facilitate the visualization of drug–drug interactions.")
 
-    manual_tabs = st.tabs(["Manual of network interactions visualization", "Manual of Essentials","About Y Code"])
-    
-    with manual_tabs[0]:
-        st.write("The main page initially displays the Network Interaction Visualization tab, which shows the number of drugs in the dataset and the total number of interactions between them. Additionally, a color code is used to indicate which color corresponds to each therapeutic subgroup by ATC code of the drugs, and is showed in **Drugs by ATC Category**")
-        st.image("images/image.png")
-        st.write("Click the arrow to open the sidebar.")
-        st.image("images/2f.png")
-        st.write("Initially, no specific drug is selected as the focus, nor are drugs filtered by their ATC code")
+    st.title("📘 Users Manual")
+
+    st.markdown("""
+    Welcome to the user manual of the **Drug–Drug Interaction Visualization Tool**.  
+    Use the index on the left to navigate between sections.
+    """)
+
+    # ---------- SIDEBAR INDEX ----------
+    st.sidebar.title("📖 Index")
+
+    section = st.sidebar.radio(
+        "Go to:",
+        [
+            "Introduction",
+            "Network Visualization",
+            "Essentials Section",
+            "About Y Code"
+        ]
+    )
+
+    # ---------- SECTIONS ----------
+    if section == "Introduction":
+        show_intro()
+
+    elif section == "Network Visualization":
+        show_network_manual()
+
+    elif section == "Essentials Section":
+        show_essentials_manual()
+
+    elif section == "About Y Code":
+        show_about_y_code()
+
+
+
+# ----------------- SECCIÓN 1 -----------------
+def show_intro():
+
+    st.header("🔹 Introduction")
+
+    st.markdown("""
+    This web application is designed to facilitate the visualization of  
+    **drug–drug interactions (DDI)** in an intuitive and interactive way.
+
+    Through this tool you can:
+
+    - Explore interactions between drugs  
+    - Filter by therapeutic categories  
+    - Analyze essential medicines by country  
+    - Visualize complex networks in a simple way  
+    """)
+
+    st.info("Use the sidebar index to explore each section of the manual.")
+
+
+
+# ----------------- SECCIÓN 2 -----------------
+def show_network_manual():
+
+    st.header("🔹 Network Interaction Visualization")
+
+    st.markdown("""
+    ### Overview
+
+    The main page initially displays the **Network Interaction Visualization tab**,  
+    which shows:
+
+    - The number of drugs in the dataset  
+    - The total number of interactions  
+    - A color code according to ATC therapeutic categories  
+    """)
+
+    st.image("images/image.png", caption="Main visualization page")
+
+    st.subheader("Opening the sidebar")
+
+    st.markdown("""
+    To begin interacting with the tool:
+
+    1. Click the arrow on the left  
+    2. The control sidebar will appear  
+    3. Filters and search options will be available  
+    """)
+
+    st.image("images/2f.png")
+
+    with st.expander("Initial State of the Visualization"):
+        st.write("""
+        Initially, no specific drug is selected as the focus,  
+        nor are drugs filtered by their ATC code.
+        """)
         st.image("images/3f.png")
-        st.write("We can select any of the checkboxes to visualize drug interactions according to their therapeutic subgroup based on the ATC classification. For example, if we select Alimentary Tract and Metabolism, the interaction graph of all drugs belonging to this therapeutic subgroup will be displayed. Additionally, the title shows information about the number of drugs and interactions.")
-        st.image("images/4f.png")
-        st.write("If you scroll further down, you will see statistics such as the number of drugs in the graph, the number of interactions, and an analysis of the interactions. The Y’s represent the interactions between drugs. The meaning of the Y is explained later.")
-        st.image("images/4f2.png")
-        st.write("Scrolling further down displays a table containing all interactions in the graph, along with a table listing all drugs.")
-        st.image("images/4f3.png")
-        st.write("You can also select more than one ATC therapeutic subgroup to visualize their interaction graph.")
-        st.image("images/5f.png")
-        st.write("Now, if you want to focus on a specific drug, you can search for it using the search bar and select it.As in the case where no drug is selected, the therapeutic subgroup checkboxes are initially unchecked.")
-        st.image("images/6f.png")
-        st.write("Select the therapeutic subgroups you want to analyze to see their interactions with the selected primary drug (in this case, verteporfin), as well as any interactions among these drugs. Select all checkboxes to visualize all interactions.")
-        st.image("images/7f.png")
-        st.write("You can interact with the graph. For example, if you hover the cursor over a node representing a drug, you will see the drug name, its ATC code, and its therapeutic subgroup. Additionally, in the upper-right corner, the toolbar icons allow you to save the image, zoom in, and reset the view.")
-        st.image("images/8f.png")
-        st.write("Additionally, if you scroll down again, you can view statistics such as the number of drugs displayed in the graph and the number of interactions, as well as statistics on the number of drugs with a Y interaction")
-        st.image("images/9f.png")
-        st.write("Again, if you scroll further down, you can see all the interactions in the graph displayed in a tabular format. You can also view, specifically, the interactions that involve only the primary drug (in this case, verteporfin). The verteporfin to Drug B table indicates that verteporfin (the selected drug) acts on Drug B, while the Drug A to verteporfin table indicates that Drug A acts on verteporfin. Additionally, the type of interaction is indicated using the Y code.")
-        st.image("images/10f.png")
-        
 
-    with manual_tabs[1]:
-        st.write("In this section, you can choose a country to see which of its essential drugs are included in the DDI dataset. The total number of essential drugs is shown first. For example if you choose Mexico, you can see that Mexico has 706 essentials drugs according to the WHO")
-        st.write("We Know as essential medicines are those that effectively and safely adress the priority health care needs of the population. These medicines are selected based on their relevance to public health and the available evidence regarding their benefits and potential harms, as well as taking into account cost, affordability, and other relevant factors.")
-        st.image("images/11f.png")
-        st.write("The essential drugs of the selected country (in this case, Mexico) that are included in the DDI dataset are shown in the following table.")
-        st.image("images/12f.png")
+    with st.expander("Filtering by ATC Therapeutic Subgroup"):
+        st.write("""
+        You can select any checkbox to visualize drug interactions  
+        according to their therapeutic subgroup based on ATC classification.
+        """)
+        st.image("images/4f.png")
+
+    with st.expander("Graph Statistics"):
+        st.write("""
+        Below the graph you will find statistics such as:
+
+        - Number of drugs  
+        - Number of interactions  
+        - Analysis of Y interactions  
+        """)
+        st.image("images/4f2.png")
+
+    with st.expander("Interaction Tables"):
+        st.write("""
+        Scrolling further down displays:
+
+        - A table with all interactions  
+        - A list of all drugs in the current graph  
+        """)
+        st.image("images/4f3.png")
+
+    with st.expander("Selecting Multiple Categories"):
+        st.write("""
+        You can also select more than one ATC subgroup  
+        to visualize combined interaction graphs.
+        """)
+        st.image("images/5f.png")
+
+    st.subheader("Focusing on a Specific Drug")
+
+    with st.expander("Searching for a Drug"):
+        st.write("""
+        To focus on a specific drug:
+
+        1. Use the search bar  
+        2. Select the desired drug  
+        3. Choose the ATC categories to analyze  
+        """)
+        st.image("images/6f.png")
+
+    with st.expander("Visualizing Interactions of a Selected Drug"):
+        st.write("""
+        After selecting a drug and categories, you will see:
+
+        - Interactions with the selected drug  
+        - Interactions among related drugs  
+        - Updated statistics  
+        """)
+        st.image("images/7f.png")
+
+    with st.expander("Interacting with the Graph"):
+        st.write("""
+        You can interact directly with the graph:
+
+        - Hover over nodes to see details  
+        - Zoom in and out  
+        - Save the image  
+        - Reset the view  
+        """)
+        st.image("images/8f.png")
+
+    with st.expander("Detailed Interaction Tables"):
+        st.write("""
+        At the bottom you can analyze:
+
+        - All interactions in the graph  
+        - Interactions involving only the primary drug  
+        - Direction of interactions using Y codes  
+        """)
+        st.image("images/10f.png")
+
+
+
+# ----------------- SECCIÓN 3 -----------------
+def show_essentials_manual():
+
+    st.header("🔹 Essential Drugs Section")
+
+    st.markdown("""
+    In this section, you can choose a country to see  
+    which of its **essential drugs** are included in the DDI dataset.
+    """)
+
+    st.image("images/11f.png", caption="Selecting a country")
+
+    with st.expander("What are Essential Medicines?"):
+        st.write("""
+        Essential medicines are those that effectively and safely  
+        address the priority health care needs of the population.
+
+        They are selected based on:
+
+        - Public health relevance  
+        - Scientific evidence  
+        - Safety and effectiveness  
+        - Cost and accessibility  
+        """)
+
+    st.subheader("Viewing Results")
+
+    st.write("""
+    After selecting a country, the system will display  
+    all essential drugs from that country included in the dataset.
+    """)
+
+    st.image("images/12f.png")
+
+
+
+# ----------------- SECCIÓN 4 -----------------
+def show_about_y_code():
+
+    st.header("🔹 About Y Code")
+
+    st.markdown("""
+    The **Y code system** represents the type of interaction  
+    between two drugs.
+
+    These codes help classify:
+
+    - The mechanism of interaction  
+    - The direction of effect  
+    - Clinical relevance  
+    """)
+
+    st.warning("""
+    Understanding Y codes is essential to correctly interpret  
+    the interaction tables and graphs.
+    """)
+
+    st.info("""
+    For full technical details about Y codes,  
+    please refer to the official dataset documentation.
+    """)
+
+
+
+
 
 
 
