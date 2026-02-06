@@ -1077,12 +1077,13 @@ def about():
 import streamlit as st
 
 
+
 def manual():
-    st.title("📘 Users Manual")
+    st.title("Users Manual")
 
     # ---------- ÍNDICE FUNCIONAL ----------
     st.markdown("""
-    ## 📑 Quick Navigation Index
+    ## Quick Navigation Index
     
     Click on any section below to jump directly to it:
     
@@ -1129,7 +1130,7 @@ def show_intro():
     ### Overview
     
     This web application is designed to facilitate the visualization of  
-    **drug–drug interactions (DDI)** in an intuitive and interactive way.
+    **drug–drug interactions (DDI)** with graph networks.
 
     Through this tool you can:
 
@@ -1139,16 +1140,15 @@ def show_intro():
     - Visualize complex networks in a simple way  
     """, unsafe_allow_html=True)
 
-    st.info("Use the quick navigation index at the top to jump between sections.")
 
 
 
 # ----------------- SECCIÓN 2 -----------------
 def show_network_manual():
-    st.header("🔹 Network Interaction Visualization")
+    st.header(" Network Interaction Visualization")
 
     st.markdown("""
-    ### 📋 Contents
+    ###   Contents
     - [Main Page](#main-page)
     - [Sidebar Controls](#sidebar-controls)
     - [ATC Filtering](#atc-filtering)
@@ -1167,7 +1167,7 @@ def show_network_manual():
     which shows:
 
     - The number of drugs in the dataset  
-    - The total number of interactions  
+    - The total number of interactions in the dataset  
     - A color code according to ATC therapeutic categories  
     """, unsafe_allow_html=True)
 
@@ -1179,7 +1179,7 @@ def show_network_manual():
 
     To begin interacting with the tool:
 
-    1. Click the arrow on the left  
+    1. Open the side bar that is marked with the arrow
     2. The control sidebar will appear  
     3. Filters and search options will be available  
     """, unsafe_allow_html=True)
@@ -1194,13 +1194,16 @@ def show_network_manual():
     with st.expander("How to Filter by ATC Categories"):
         st.write("""
         You can select any checkbox to visualize drug interactions  
-        according to their therapeutic subgroup based on ATC classification.
+        according to their therapeutic subgroup based on ATC classification. In this case
+        the interactions are between all drugs in the dataset that are in the therapeutic subgroup of
+        Alimentary Tract And Metabolism.
+        Additionally, the numbers to the right of the therapeutic subgroups indicate the number of drugs in each therapeutic subgroup
         """)
         st.image("images/4f.png")
 
     st.markdown("""
     <a id="drug-search"></a>
-    ### Focusing on a Specific Drug
+    ### DDI for an Specific Drug
     """, unsafe_allow_html=True)
 
     with st.expander("Searching for a Drug"):
@@ -1211,6 +1214,7 @@ def show_network_manual():
         2. Select the desired drug  
         3. Choose the ATC categories to analyze  
         """)
+        
         st.image("images/6f.png")
 
     st.markdown("""
@@ -1218,11 +1222,13 @@ def show_network_manual():
     ### Interacting with the Graph
     """, unsafe_allow_html=True)
 
-    with st.expander("Graph Navigation Features"):
+    with st.expander("Graph and Graph Navigation Features"):
         st.write("""
+        To view the DDI pair interactions that involve the selected drug, choose the ATC categories to analyze (in this case, we selected all of them). The network graph will then appear automatically.”
+
         You can interact directly with the graph:
 
-        - Hover over nodes to see details  
+        - Hover over nodes to see details about ATC codes of the drug, ATC category and name
         - Zoom in and out  
         - Save the image  
         - Reset the view  
@@ -1253,10 +1259,10 @@ def show_network_manual():
 
 # ----------------- SECCIÓN 3 -----------------
 def show_essentials_manual():
-    st.header("🔹 Essential Drugs Section")
+    st.header(" Essential Drugs Section")
 
     st.markdown("""
-    ### 📋 Contents
+    ###  Contents
     - [Country Selection](#country-selection)
     - [Essential Medicines](#essential-medicines)
     - [Results View](#results-view)
@@ -1308,10 +1314,10 @@ def show_essentials_manual():
 
 # ----------------- SECCIÓN 4 -----------------
 def show_about_y_code():
-    st.header("🔹 About Y Code")
+    st.header(" About Y Code")
 
     st.markdown("""
-    ### 📋 Contents
+    ###  Contents
     - [Y Code System](#y-code-system)
     
     ---
@@ -1331,15 +1337,14 @@ def show_about_y_code():
     - Clinical relevance  
     """, unsafe_allow_html=True)
 
-    st.warning("""
-    Understanding Y codes is essential to correctly interpret  
-    the interaction tables and graphs.
-    """)
+   
 
     st.markdown("""
     ---
     [↑ Back to Top](#overview)
     """, unsafe_allow_html=True)
+
+
 
 
 
