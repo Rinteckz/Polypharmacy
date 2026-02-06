@@ -14,19 +14,18 @@ st.set_page_config(layout="wide")
 def load_data():
     return pd.read_csv(r"DDIBUENO.csv")
 
-
 df = load_data()
 
 @st.cache_data
 def load_data2():
     return pd.read_csv(r"drugbank_ddi_label_map.csv")
-meeaning_y=load_data2()
+meeaning_y = load_data2()
 
 @st.cache_data
 def load_essential_drugs():
-    
     essentials_df = pd.read_csv(r"farmacos_esenciales.csv")
     return essentials_df
+
 # DICCIONARIO CON NOMBRES COMPLETOS DE ATC
 ATC_CATEGORIES = {
     'A': 'ALIMENTARY TRACT AND METABOLISM',
@@ -343,7 +342,9 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
                    ))
     
     return fig, G_filtered
+
 st.title("**Drug-Drug interactions**")
+
 def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
     """Mostrar análisis detallado de interacciones con valores de 'Y'"""
     
@@ -366,7 +367,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
     
     interacciones_df = pd.DataFrame(interacciones_data)
     
-    # Mostrar codigo de efecto (este se busca en el csv que pondré en la mismsa pag)
+    # Mostrar codigo de efecto
     st.write("**Effect by DDI code (Y):**")
     y_counts = interacciones_df['Y Value'].value_counts().sort_index()
     
@@ -387,7 +388,6 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
             )
             st.plotly_chart(fig_pie, use_container_width=True)
     
-
     with st.expander("All Interactions in the network", expanded=False):
         interacciones_df = interacciones_df.sort_values('Y Value')
         
@@ -481,8 +481,6 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
             )
         else:
             st.write("No incoming interactions.")
-        
-        
 
 def pestaña_visualizacion():
     """Pestaña principal de visualización de interacciones"""
@@ -498,7 +496,6 @@ def pestaña_visualizacion():
     # Sidebar para controles
     with st.sidebar:
         st.header("Controls")
-        
         
         all_drugs = sorted(set(df['Common_name_x'].tolist() + df['Common_name_y'].tolist()))
         
@@ -520,8 +517,6 @@ def pestaña_visualizacion():
         else:
             farmaco_principal = None
             G_actual = G_completo
-        
-        
         
         all_categories = set()
         for node in G_actual.nodes():
@@ -563,7 +558,7 @@ def pestaña_visualizacion():
                     unsafe_allow_html=True
                 )
         
-        # Botones de selección r
+        # Botones de selección rápida
         col1, col2 = st.columns(2)
         
         with col1:
@@ -633,9 +628,8 @@ def pestaña_visualizacion():
             with col2:
                 st.metric("Displayed Interactions", len(G_filtrado.edges()))
             
-            
             # Mostrar análisis de interacciones
-            mostrar_analisis_interacciones(G_filtrado, farmaco_principal,meeaning_y)
+            mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y)
         
         if G_filtrado and len(G_filtrado.nodes()) > 0:
             with st.expander("View list of displayed drugs", expanded=False):
@@ -651,77 +645,13 @@ def pestaña_visualizacion():
                             unsafe_allow_html=True
                         )
 
-
-   
-
 def pestaña_significado_y():
-    st.title("Dataset, menaing of Y values")
+    st.title("Dataset, meaning of Y values")
     st.header('Dataset')
-    st.dataframe(meeaning_y,use_container_width=True)
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    st.dataframe(meeaning_y, use_container_width=True)
 
 def pestaña_esenciales():
-    """Pestaña simple para fármacos esenciales"""
+    """Pestaña para fármacos esenciales con grafo de interacciones"""
     
     st.title("Essential Drugs By WHO")
     
@@ -741,274 +671,578 @@ def pestaña_esenciales():
         st.warning("No countries found in the dataset.")
         return
     
-    # Seleccionar país
-    st.subheader("Select Country")
-    pais_seleccionado = st.selectbox(
-        "Choose a country:",
-        paises,
-        index=paises.index('Mexico') if 'Mexico' in paises else 0
-    )
+    # Crear pestañas dentro de Essentials
+    tab_essentials, tab_graph = st.tabs(["Essential Drugs List", "Interaction Network"])
     
-    # Filtrar fármacos esenciales del país
-    farmacos_pais = essentials_df[essentials_df[pais_seleccionado] == 1]
-    
-    if farmacos_pais.empty:
-        st.info(f"No essential drugs found for {pais_seleccionado}")
-        return
-    
-    st.subheader(f"Statistics for {pais_seleccionado}")
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Total Essential Drugs", len(farmacos_pais))
-    
-    
-    codigos_atc_esenciales = set()
-    
-    codigos_atc_esenciales.update(farmacos_pais['ATC code primary'].dropna().unique())
-    
-    for codigos in farmacos_pais['ATC code secondary'].dropna():
-        if isinstance(codigos, str):
-            if '|' in codigos:
-                for codigo in codigos.split('|'):
-                    codigos_atc_esenciales.add(codigo.strip())
-            else:
-                codigos_atc_esenciales.add(codigos.strip())
-    
-    codigos_atc_esenciales = {codigo.strip() for codigo in codigos_atc_esenciales 
-                              if pd.notna(codigo) and codigo.strip() != ''}
-    
-    #with col2:
-        #st.metric("Unique ATC Codes", len(codigos_atc_esenciales))
-    
-    
-    def verificar_farmaco(atc_code, num_atc):
-        if pd.isna(atc_code) or atc_code == 'No ATC' or num_atc == 0:
-            return False
+    with tab_essentials:
+        # Seleccionar país
+        st.subheader("Select Country")
+        pais_seleccionado = st.selectbox(
+            "Choose a country:",
+            paises,
+            index=paises.index('Mexico') if 'Mexico' in paises else 0,
+            key="country_select_essentials"
+        )
         
-        if '|' in str(atc_code):
-            codigos = [c.strip() for c in str(atc_code).split('|')]
-            return any(codigo in codigos_atc_esenciales for codigo in codigos)
-        else:
-            return str(atc_code).strip() in codigos_atc_esenciales
-    
-    # Aplicar verificación a ambas columnas
-    df['esencial_x'] = df.apply(lambda row: verificar_farmaco(row['atc_code_x'], row['num_atc_x']), axis=1)
-    df['esencial_y'] = df.apply(lambda row: verificar_farmaco(row['atc_code_y'], row['num_atc_y']), axis=1)
-    
-    # Contar cuántos son esenciales
-    esencial_x_count = df['esencial_x'].sum()
-    esencial_y_count = df['esencial_y'].sum()
-    
-    #with col3:
-        #st.metric("Drugs in DDIBUENO", esencial_x_count + esencial_y_count)
-    
-    
-    farmacos_esenciales_lista = []
-    
-    # Procesar fármacos de la columna X
-    for idx, row in df[df['esencial_x']].iterrows():
-        farmacos_esenciales_lista.append({
-            'Common_Name': row['Common_name_x'],
-            'ATC_Code': row['atc_code_x'],
-            'Num_ATC': row['num_atc_x'],
-            'Source': 'Column X',
-            'Original_Index': idx,
-            'Drug_Pair': f"{row['Common_name_x']} - {row['Common_name_y']}",
-            'Y_Value': row['Y']
-        })
-    
-    for idx, row in df[df['esencial_y']].iterrows():
-        farmacos_esenciales_lista.append({
-            'Common_Name': row['Common_name_y'],
-            'ATC_Code': row['atc_code_y'],
-            'Num_ATC': row['num_atc_y'],
-            'Source': 'Column Y',
-            'Original_Index': idx,
-            'Drug_Pair': f"{row['Common_name_x']} - {row['Common_name_y']}",
-            'Y_Value': row['Y']
-        })
-    
-    # Crear DataFrame
-    if not farmacos_esenciales_lista:
-        st.info(f"No essential drugs from {pais_seleccionado} found in DDI database")
-        return
-    
-    df_farmacos_esenciales = pd.DataFrame(farmacos_esenciales_lista)
-    
-    # Eliminar duplicados (mismo nombre y ATC)
-    df_farmacos_esenciales = df_farmacos_esenciales.drop_duplicates(subset=['Common_Name', 'ATC_Code'])
-    
-    # Ordenar por nombre
-    df_farmacos_esenciales = df_farmacos_esenciales.sort_values('Common_Name')
-    
-    
-    st.subheader(f"Essential Drugs from {pais_seleccionado} found in DDI dataset")
-    
-    # Mostrar tabla principal
-    st.dataframe(
-        df_farmacos_esenciales[['Common_Name', 'ATC_Code']],
-        use_container_width=True,
-        column_config={
-            "Common_Name": st.column_config.TextColumn("Drug Name", width="medium"),
-            "ATC_Code": st.column_config.TextColumn("ATC Code", width="small")
-        },
-        hide_index=True
-    )
-    
-    # Mostrar estadísticas detalladas
-    st.subheader("Detailed Statistics")
-    
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric("Unique Essential Drugs", len(df_farmacos_esenciales))
-   # with col2:
-       # st.metric("From Column X", len(df_farmacos_esenciales[df_farmacos_esenciales['Source'] == 'Column X']))
-    #with col3:
-      #  st.metric("From Column Y", len(df_farmacos_esenciales[df_farmacos_esenciales['Source'] == 'Column Y']))
-    #with col4:
-       # unique_drugs = set(df_farmacos_esenciales['Common_Name'])
-        #st.metric("Unique Drug Names", len(unique_drugs))
-    
-    
-    st.subheader("Distribution by ATC Group")
-    
-    def extraer_grupo_atc(atc_code):
-        if pd.isna(atc_code) or atc_code == 'No ATC':
-            return 'Sin ATC'
-        if isinstance(atc_code, str) and len(atc_code) > 0:
-            return atc_code[0]
-        return 'Unknown'
-    
-    df_farmacos_esenciales['ATC_Group'] = df_farmacos_esenciales['ATC_Code'].apply(extraer_grupo_atc)
-    
-    ATC_GROUP_NAMES = {
-    'A': 'ALIMENTARY TRACT AND METABOLISM',
-    'B': 'BLOOD AND BLOOD FORMING ORGANS',
-    'C': 'CARDIOVASCULAR SYSTEM',
-    'D': 'DERMATOLOGICALS',
-    'G': 'GENITO URINARY SYSTEM AND SEX HORMONES',
-    'H': 'SYSTEMIC HORMONAL PREPARATIONS, EXCL. SEX HORMONES AND INSULINS',
-    'J': 'ANTIINFECTIVES FOR SYSTEMIC USE',
-    'L': 'ANTINEOPLASTIC AND IMMUNOMODULATING AGENTS',
-    'M': 'MUSCULO-SKELETAL SYSTEM',
-    'N': 'NERVOUS SYSTEM',
-    'P': 'ANTIPARASITIC PRODUCTS, INSECTICIDES AND REPELLENTS',
-    'R': 'RESPIRATORY SYSTEM',
-    'S': 'SENSORY ORGANS',
-    'V': 'VARIOUS',
-    'Sin ATC': 'No ATC',
-    'Multi ATC': 'Multi ATC'
-}
-    
-    # Crear DataFrame para distribución
-    distribucion = df_farmacos_esenciales['ATC_Group'].value_counts().reset_index()
-    distribucion.columns = ['ATC_Group', 'Count']
-    distribucion['Group_Name'] = distribucion['ATC_Group'].map(ATC_GROUP_NAMES)
-    
-    # Mostrar gráfico de barras
-    fig = px.bar(
-        distribucion,
-        x='Group_Name',
-        y='Count',
-        title=f"Essential Drugs by ATC Group - {pais_seleccionado}",
-        color='Count',
-        color_continuous_scale='Blues',
-        labels={'Group_Name': 'ATC Group', 'Count': 'Number of Drugs'}
-    )
-    st.plotly_chart(fig, use_container_width=True)
-    
-    # Mostrar tabla de distribución
-    with st.expander("View Distribution Table", expanded=False):
+        # Filtrar fármacos esenciales del país
+        farmacos_pais = essentials_df[essentials_df[pais_seleccionado] == 1]
+        
+        if farmacos_pais.empty:
+            st.info(f"No essential drugs found for {pais_seleccionado}")
+            return
+        
+        st.subheader(f"Statistics for {pais_seleccionado}")
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Total Essential Drugs", len(farmacos_pais))
+        
+        codigos_atc_esenciales = set()
+        
+        codigos_atc_esenciales.update(farmacos_pais['ATC code primary'].dropna().unique())
+        
+        for codigos in farmacos_pais['ATC code secondary'].dropna():
+            if isinstance(codigos, str):
+                if '|' in codigos:
+                    for codigo in codigos.split('|'):
+                        codigos_atc_esenciales.add(codigo.strip())
+                else:
+                    codigos_atc_esenciales.add(codigos.strip())
+        
+        codigos_atc_esenciales = {codigo.strip() for codigo in codigos_atc_esenciales 
+                                  if pd.notna(codigo) and codigo.strip() != ''}
+        
+        def verificar_farmaco(atc_code, num_atc):
+            if pd.isna(atc_code) or atc_code == 'No ATC' or num_atc == 0:
+                return False
+            
+            if '|' in str(atc_code):
+                codigos = [c.strip() for c in str(atc_code).split('|')]
+                return any(codigo in codigos_atc_esenciales for codigo in codigos)
+            else:
+                return str(atc_code).strip() in codigos_atc_esenciales
+        
+        # Aplicar verificación a ambas columnas
+        df['esencial_x'] = df.apply(lambda row: verificar_farmaco(row['atc_code_x'], row['num_atc_x']), axis=1)
+        df['esencial_y'] = df.apply(lambda row: verificar_farmaco(row['atc_code_y'], row['num_atc_y']), axis=1)
+        
+        # Contar cuántos son esenciales
+        esencial_x_count = df['esencial_x'].sum()
+        esencial_y_count = df['esencial_y'].sum()
+        
+        farmacos_esenciales_lista = []
+        
+        # Procesar fármacos de la columna X
+        for idx, row in df[df['esencial_x']].iterrows():
+            farmacos_esenciales_lista.append({
+                'Common_Name': row['Common_name_x'],
+                'ATC_Code': row['atc_code_x'],
+                'Num_ATC': row['num_atc_x'],
+                'Source': 'Column X',
+                'Original_Index': idx,
+                'Drug_Pair': f"{row['Common_name_x']} - {row['Common_name_y']}",
+                'Y_Value': row['Y']
+            })
+        
+        for idx, row in df[df['esencial_y']].iterrows():
+            farmacos_esenciales_lista.append({
+                'Common_Name': row['Common_name_y'],
+                'ATC_Code': row['atc_code_y'],
+                'Num_ATC': row['num_atc_y'],
+                'Source': 'Column Y',
+                'Original_Index': idx,
+                'Drug_Pair': f"{row['Common_name_x']} - {row['Common_name_y']}",
+                'Y_Value': row['Y']
+            })
+        
+        # Crear DataFrame
+        if not farmacos_esenciales_lista:
+            st.info(f"No essential drugs from {pais_seleccionado} found in DDI database")
+            return
+        
+        df_farmacos_esenciales = pd.DataFrame(farmacos_esenciales_lista)
+        
+        # Eliminar duplicados (mismo nombre y ATC)
+        df_farmacos_esenciales = df_farmacos_esenciales.drop_duplicates(subset=['Common_Name', 'ATC_Code'])
+        
+        # Ordenar por nombre
+        df_farmacos_esenciales = df_farmacos_esenciales.sort_values('Common_Name')
+        
+        st.subheader(f"Essential Drugs from {pais_seleccionado} found in DDI dataset")
+        
+        # Mostrar tabla principal
         st.dataframe(
-            distribucion,
+            df_farmacos_esenciales[['Common_Name', 'ATC_Code']],
             use_container_width=True,
+            column_config={
+                "Common_Name": st.column_config.TextColumn("Drug Name", width="medium"),
+                "ATC_Code": st.column_config.TextColumn("ATC Code", width="small")
+            },
             hide_index=True
         )
-    
-    
-    st.subheader("Interactions Involving Essential Drugs")
-    
-    essential_drugs_names = set(df_farmacos_esenciales['Common_Name'])
-    
-    essential_interactions = df[
-        df['Common_name_x'].isin(essential_drugs_names) | 
-        df['Common_name_y'].isin(essential_drugs_names)
-    ]
-    
-    if not essential_interactions.empty:
-        st.write(f"**Found {len(essential_interactions)} interactions involving essential drugs**")
         
-        with st.expander("View All Interactions", expanded=False):
-            st.dataframe(
-                essential_interactions[['Common_name_x', 'Common_name_y', 'Y', 'atc_code_x', 'atc_code_y']].rename(
-                    columns={
-                        'Common_name_x': 'Drug A',
-                        'Common_name_y': 'Drug B',
-                        'Y': 'Y Value',
-                        'atc_code_x': 'ATC Code A',
-                        'atc_code_y': 'ATC Code B'
-                    }
-                ),
-                use_container_width=True,
-                hide_index=True
-            )
+        # Mostrar estadísticas detalladas
+        st.subheader("Detailed Statistics")
         
-        st.write("**Severity Analysis (Y Values):**")
-        
-        y_counts = essential_interactions['Y'].value_counts().sort_index()
-        
-        col1, col2 = st.columns(2)
-        
+        col1, col2, col3, col4 = st.columns(4)
         with col1:
-            for y_val, count in y_counts.items():
-                percentage = (count / len(essential_interactions)) * 100
-                severity = {
-                    0: "None", 1: "Mild", 2: "Moderate", 
-                    3: "Severe", 4: "Contraindicated"
-                }.get(y_val, "Unknown")
-                
-                st.write(f"**Y={y_val} ({severity}):** {count} ({percentage:.1f}%)")
+            st.metric("Unique Essential Drugs", len(df_farmacos_esenciales))
         
-        with col2:
-            fig_pie = px.pie(
-                values=y_counts.values,
-                names=[f"Y={k}" for k in y_counts.index],
-                title="Severity Distribution",
-                color_discrete_sequence=px.colors.sequential.Reds
-            )
-            st.plotly_chart(fig_pie, use_container_width=True)
+        st.subheader("Distribution by ATC Group")
         
-        # Top fármacos más interactivos
-        st.write("**Most Interactive Essential Drugs:**")
+        def extraer_grupo_atc(atc_code):
+            if pd.isna(atc_code) or atc_code == 'No ATC':
+                return 'Sin ATC'
+            if isinstance(atc_code, str) and len(atc_code) > 0:
+                return atc_code[0]
+            return 'Unknown'
         
-        interaction_counts = {}
-        for _, row in essential_interactions.iterrows():
-            if row['Common_name_x'] in essential_drugs_names:
-                interaction_counts[row['Common_name_x']] = interaction_counts.get(row['Common_name_x'], 0) + 1
-            if row['Common_name_y'] in essential_drugs_names:
-                interaction_counts[row['Common_name_y']] = interaction_counts.get(row['Common_name_y'], 0) + 1
+        df_farmacos_esenciales['ATC_Group'] = df_farmacos_esenciales['ATC_Code'].apply(extraer_grupo_atc)
         
-        if interaction_counts:
-            top_drugs = pd.DataFrame(
-                interaction_counts.items(),
-                columns=['Drug', 'Interaction_Count']
-            ).sort_values('Interaction_Count', ascending=False).head(10)
-            
+        ATC_GROUP_NAMES = {
+            'A': 'ALIMENTARY TRACT AND METABOLISM',
+            'B': 'BLOOD AND BLOOD FORMING ORGANS',
+            'C': 'CARDIOVASCULAR SYSTEM',
+            'D': 'DERMATOLOGICALS',
+            'G': 'GENITO URINARY SYSTEM AND SEX HORMONES',
+            'H': 'SYSTEMIC HORMONAL PREPARATIONS, EXCL. SEX HORMONES AND INSULINS',
+            'J': 'ANTIINFECTIVES FOR SYSTEMIC USE',
+            'L': 'ANTINEOPLASTIC AND IMMUNOMODULATING AGENTS',
+            'M': 'MUSCULO-SKELETAL SYSTEM',
+            'N': 'NERVOUS SYSTEM',
+            'P': 'ANTIPARASITIC PRODUCTS, INSECTICIDES AND REPELLENTS',
+            'R': 'RESPIRATORY SYSTEM',
+            'S': 'SENSORY ORGANS',
+            'V': 'VARIOUS',
+            'Sin ATC': 'No ATC',
+            'Multi ATC': 'Multi ATC'
+        }
+        
+        # Crear DataFrame para distribución
+        distribucion = df_farmacos_esenciales['ATC_Group'].value_counts().reset_index()
+        distribucion.columns = ['ATC_Group', 'Count']
+        distribucion['Group_Name'] = distribucion['ATC_Group'].map(ATC_GROUP_NAMES)
+        
+        # Mostrar gráfico de barras
+        fig = px.bar(
+            distribucion,
+            x='Group_Name',
+            y='Count',
+            title=f"Essential Drugs by ATC Group - {pais_seleccionado}",
+            color='Count',
+            color_continuous_scale='Blues',
+            labels={'Group_Name': 'ATC Group', 'Count': 'Number of Drugs'}
+        )
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Mostrar tabla de distribución
+        with st.expander("View Distribution Table", expanded=False):
             st.dataframe(
-                top_drugs,
+                distribucion,
                 use_container_width=True,
                 hide_index=True
             )
+        
+        st.subheader("Interactions Involving Essential Drugs")
+        
+        essential_drugs_names = set(df_farmacos_esenciales['Common_Name'])
+        
+        essential_interactions = df[
+            df['Common_name_x'].isin(essential_drugs_names) | 
+            df['Common_name_y'].isin(essential_drugs_names)
+        ]
+        
+        if not essential_interactions.empty:
+            st.write(f"**Found {len(essential_interactions)} interactions involving essential drugs**")
+            
+            with st.expander("View All Interactions", expanded=False):
+                st.dataframe(
+                    essential_interactions[['Common_name_x', 'Common_name_y', 'Y', 'atc_code_x', 'atc_code_y']].rename(
+                        columns={
+                            'Common_name_x': 'Drug A',
+                            'Common_name_y': 'Drug B',
+                            'Y': 'Y Value',
+                            'atc_code_x': 'ATC Code A',
+                            'atc_code_y': 'ATC Code B'
+                        }
+                    ),
+                    use_container_width=True,
+                    hide_index=True
+                )
+            
+            st.write("**Severity Analysis (Y Values):**")
+            
+            y_counts = essential_interactions['Y'].value_counts().sort_index()
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                for y_val, count in y_counts.items():
+                    percentage = (count / len(essential_interactions)) * 100
+                    severity = {
+                        0: "None", 1: "Mild", 2: "Moderate", 
+                        3: "Severe", 4: "Contraindicated"
+                    }.get(y_val, "Unknown")
+                    
+                    st.write(f"**Y={y_val} ({severity}):** {count} ({percentage:.1f}%)")
+            
+            with col2:
+                fig_pie = px.pie(
+                    values=y_counts.values,
+                    names=[f"Y={k}" for k in y_counts.index],
+                    title="Severity Distribution",
+                    color_discrete_sequence=px.colors.sequential.Reds
+                )
+                st.plotly_chart(fig_pie, use_container_width=True)
+            
+            # Top fármacos más interactivos
+            st.write("**Most Interactive Essential Drugs:**")
+            
+            interaction_counts = {}
+            for _, row in essential_interactions.iterrows():
+                if row['Common_name_x'] in essential_drugs_names:
+                    interaction_counts[row['Common_name_x']] = interaction_counts.get(row['Common_name_x'], 0) + 1
+                if row['Common_name_y'] in essential_drugs_names:
+                    interaction_counts[row['Common_name_y']] = interaction_counts.get(row['Common_name_y'], 0) + 1
+            
+            if interaction_counts:
+                top_drugs = pd.DataFrame(
+                    interaction_counts.items(),
+                    columns=['Drug', 'Interaction_Count']
+                ).sort_values('Interaction_Count', ascending=False).head(10)
+                
+                st.dataframe(
+                    top_drugs,
+                    use_container_width=True,
+                    hide_index=True
+                )
+        
+        else:
+            st.info("No interactions found involving these essential drugs")
     
-    else:
-        st.info("No interactions found involving these essential drugs")
-    
+    with tab_graph:
+        st.subheader(f"Interaction Network for Essential Drugs - {pais_seleccionado}")
+        
+        # Reutilizar la selección de país de la otra pestaña
+        pais_seleccionado = st.session_state.get("country_select_essentials", paises[0])
+        farmacos_pais = essentials_df[essentials_df[pais_seleccionado] == 1]
+        
+        if farmacos_pais.empty:
+            st.info(f"No essential drugs found for {pais_seleccionado}")
+            return
+        
+        # Extraer códigos ATC de fármacos esenciales
+        codigos_atc_esenciales = set()
+        codigos_atc_esenciales.update(farmacos_pais['ATC code primary'].dropna().unique())
+        
+        for codigos in farmacos_pais['ATC code secondary'].dropna():
+            if isinstance(codigos, str):
+                if '|' in codigos:
+                    for codigo in codigos.split('|'):
+                        codigos_atc_esenciales.add(codigo.strip())
+                else:
+                    codigos_atc_esenciales.add(codigos.strip())
+        
+        codigos_atc_esenciales = {codigo.strip() for codigo in codigos_atc_esenciales 
+                                  if pd.notna(codigo) and codigo.strip() != ''}
+        
+        # Función para verificar si un fármaco es esencial
+        def verificar_farmaco(atc_code, num_atc):
+            if pd.isna(atc_code) or atc_code == 'No ATC' or num_atc == 0:
+                return False
+            
+            if '|' in str(atc_code):
+                codigos = [c.strip() for c in str(atc_code).split('|')]
+                return any(codigo in codigos_atc_esenciales for codigo in codigos)
+            else:
+                return str(atc_code).strip() in codigos_atc_esenciales
+        
+        # Filtrar interacciones que involucran fármacos esenciales
+        df['esencial_x'] = df.apply(lambda row: verificar_farmaco(row['atc_code_x'], row['num_atc_x']), axis=1)
+        df['esencial_y'] = df.apply(lambda row: verificar_farmaco(row['atc_code_y'], row['num_atc_y']), axis=1)
+        
+        # Crear DataFrame solo con interacciones entre fármacos esenciales
+        essential_interactions = df[(df['esencial_x']) & (df['esencial_y'])]
+        
+        if essential_interactions.empty:
+            st.info(f"No interactions found between essential drugs of {pais_seleccionado}")
+            
+            # Mostrar interacciones donde al menos uno es esencial
+            mixed_interactions = df[(df['esencial_x']) | (df['esencial_y'])]
+            if not mixed_interactions.empty:
+                st.write(f"Found {len(mixed_interactions)} interactions where at least one drug is essential")
+                
+                # Crear grafo con todos los fármacos esenciales y sus conexiones
+                all_essential_drugs = set()
+                for idx, row in mixed_interactions.iterrows():
+                    if row['esencial_x']:
+                        all_essential_drugs.add(row['Common_name_x'])
+                    if row['esencial_y']:
+                        all_essential_drugs.add(row['Common_name_y'])
+                
+                st.write(f"**Essential drugs in DDI dataset:** {len(all_essential_drugs)}")
+                
+                # Crear grafo para visualización
+                if len(all_essential_drugs) > 0:
+                    # Crear subgrafo manualmente
+                    G_essential = nx.DiGraph()
+                    
+                    # Añadir nodos esenciales
+                    for drug in all_essential_drugs:
+                        # Buscar información del fármaco en el DataFrame original
+                        drug_info = df[(df['Common_name_x'] == drug) | (df['Common_name_y'] == drug)].iloc[0]
+                        
+                        if drug_info['Common_name_x'] == drug:
+                            atc = drug_info['atc_code_x']
+                            num_atc = drug_info['num_atc_x']
+                        else:
+                            atc = drug_info['atc_code_y']
+                            num_atc = drug_info['num_atc_y']
+                        
+                        color, category = get_atc_color_and_category(atc, num_atc)
+                        tooltip_info = f"<b>Drug:</b> {drug}<br><b>ATC Code:</b> {atc}<br><b>ATC Category:</b> {category}<br><b>Essential for:</b> {pais_seleccionado}"
+                        
+                        G_essential.add_node(drug, 
+                                          atc_code=atc,
+                                          atc_category=category,
+                                          color=color,
+                                          num_atc=num_atc,
+                                          tooltip=tooltip_info,
+                                          essential=True)
+                    
+                    # Añadir aristas donde al menos un fármaco es esencial
+                    for _, row in mixed_interactions.iterrows():
+                        drug1 = row['Common_name_x']
+                        drug2 = row['Common_name_y']
+                        interaction_type = row['Y']
+                        
+                        if drug1 in all_essential_drugs and drug2 in all_essential_drugs:
+                            edge_tooltip = f"<b>From:</b> {drug1} → <b>To:</b> {drug2}<br><b>Interaction:</b> Y={interaction_type}<br><b>Both essential for:</b> {pais_seleccionado}"
+                            G_essential.add_edge(drug1, drug2, 
+                                              interaction_type=interaction_type,
+                                              tooltip=edge_tooltip,
+                                              both_essential=True)
+                        elif drug1 in all_essential_drugs:
+                            edge_tooltip = f"<b>From:</b> {drug1} (Essential) → <b>To:</b> {drug2}<br><b>Interaction:</b> Y={interaction_type}"
+                            G_essential.add_edge(drug1, drug2, 
+                                              interaction_type=interaction_type,
+                                              tooltip=edge_tooltip,
+                                              both_essential=False)
+                        elif drug2 in all_essential_drugs:
+                            edge_tooltip = f"<b>From:</b> {drug1} → <b>To:</b> {drug2} (Essential)<br><b>Interaction:</b> Y={interaction_type}"
+                            G_essential.add_edge(drug1, drug2, 
+                                              interaction_type=interaction_type,
+                                              tooltip=edge_tooltip,
+                                              both_essential=False)
+                    
+                    # Crear visualización
+                    fig, G_filtrado = crear_grafo_plotly(G_essential, None, None)
+                    
+                    if fig:
+                        st.plotly_chart(fig, use_container_width=True, 
+                                      config={'displayModeBar': True, 'scrollZoom': True})
+                        
+                        # Estadísticas
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric("Essential Drugs", len(all_essential_drugs))
+                        with col2:
+                            st.metric("Total Interactions", len(G_essential.edges()))
+                        with col3:
+                            both_essential = sum(1 for u, v, data in G_essential.edges(data=True) 
+                                               if data.get('both_essential', False))
+                            st.metric("Essential-Essential Interactions", both_essential)
+                        
+                        # Mostrar análisis de interacciones
+                        mostrar_analisis_interacciones(G_filtrado, None, meeaning_y)
+            return
+        
+        # Crear grafo solo con fármacos esenciales
+        st.write(f"**Found {len(essential_interactions)} interactions between essential drugs of {pais_seleccionado}**")
+        
+        # Crear grafo
+        G_essential = nx.DiGraph()
+        
+        # Recopilar todos los fármacos esenciales únicos
+        essential_drugs_set = set()
+        for _, row in essential_interactions.iterrows():
+            essential_drugs_set.add(row['Common_name_x'])
+            essential_drugs_set.add(row['Common_name_y'])
+        
+        # Añadir nodos con información
+        for drug in essential_drugs_set:
+            # Buscar información del fármaco
+            drug_rows = df[(df['Common_name_x'] == drug) | (df['Common_name_y'] == drug)]
+            if not drug_rows.empty:
+                drug_info = drug_rows.iloc[0]
+                
+                if drug_info['Common_name_x'] == drug:
+                    atc = drug_info['atc_code_x']
+                    num_atc = drug_info['num_atc_x']
+                else:
+                    atc = drug_info['atc_code_y']
+                    num_atc = drug_info['num_atc_y']
+                
+                color, category = get_atc_color_and_category(atc, num_atc)
+                tooltip_info = f"<b>Drug:</b> {drug}<br><b>ATC Code:</b> {atc}<br><b>ATC Category:</b> {category}<br><b>Essential for:</b> {pais_seleccionado}"
+                
+                G_essential.add_node(drug, 
+                                   atc_code=atc,
+                                   atc_category=category,
+                                   color=color,
+                                   num_atc=num_atc,
+                                   tooltip=tooltip_info,
+                                   essential=True)
+        
+        # Añadir aristas (interacciones)
+        for _, row in essential_interactions.iterrows():
+            drug1 = row['Common_name_x']
+            drug2 = row['Common_name_y']
+            interaction_type = row['Y']
+            
+            edge_tooltip = f"<b>From:</b> {drug1} → <b>To:</b> {drug2}<br><b>Interaction:</b> Y={interaction_type}<br><b>Both essential for:</b> {pais_seleccionado}"
+            
+            G_essential.add_edge(drug1, drug2, 
+                               interaction_type=interaction_type,
+                               tooltip=edge_tooltip,
+                               both_essential=True)
+        
+        # Sidebar para controles del grafo
+        with st.sidebar:
+            st.header("Essential Drugs Network Controls")
+            
+            # Seleccionar fármaco principal
+            essential_drugs_list = sorted(list(essential_drugs_set))
+            farmaco_principal_seleccionado = st.selectbox(
+                "Choose an essential drug to focus on:",
+                ["None"] + essential_drugs_list,
+                index=0,
+                key="essential_drug_select",
+                help="Select 'None' to see the complete network"
+            )
+            
+            if farmaco_principal_seleccionado != "None":
+                farmaco_principal = farmaco_principal_seleccionado
+                # Crear subgrafo centrado
+                if farmaco_principal in G_essential.nodes():
+                    predecessors = list(G_essential.predecessors(farmaco_principal))
+                    successors = list(G_essential.successors(farmaco_principal))
+                    subgraph_nodes = [farmaco_principal] + predecessors + successors
+                    G_actual = G_essential.subgraph(subgraph_nodes).copy()
+                    st.success(f"Showing network for: {farmaco_principal}")
+                else:
+                    G_actual = G_essential
+                    farmaco_principal = None
+            else:
+                farmaco_principal = None
+                G_actual = G_essential
+            
+            # Filtros por categoría ATC
+            st.subheader("Filter by ATC Category")
+            
+            all_categories = set()
+            for node in G_actual.nodes():
+                if farmaco_principal and node == farmaco_principal:
+                    continue
+                all_categories.add(G_actual.nodes[node]['atc_category'])
+            
+            category_list = sorted(list(all_categories))
+            
+            if 'active_categories_essential' not in st.session_state:
+                st.session_state.active_categories_essential = {cat: True for cat in category_list}
+            
+            for category in category_list:
+                count = sum(1 for node in G_actual.nodes() 
+                           if G_actual.nodes[node]['atc_category'] == category and 
+                           node != farmaco_principal)
+                
+                col1, col2 = st.columns([1, 3])
+                with col1:
+                    checked = st.checkbox(
+                        "",
+                        value=st.session_state.active_categories_essential.get(category, True),
+                        key=f"essential_checkbox_{category.replace(' ', '_').replace(',', '')}",
+                        label_visibility="collapsed"
+                    )
+                    if checked != st.session_state.active_categories_essential.get(category, True):
+                        st.session_state.active_categories_essential[category] = checked
+                
+                with col2:
+                    atc_letter = get_atc_letter_from_category(category)
+                    if atc_letter:
+                        color = ATC_COLORS.get(atc_letter, '#CCCCCC')
+                    else:
+                        color = '#CCCCCC'
+                    
+                    st.markdown(
+                        f"<span style='color:{color}; font-weight:bold;'>■</span> "
+                        f"{category} ({count})",
+                        unsafe_allow_html=True
+                    )
+            
+            # Botones de selección rápida
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("Select All", use_container_width=True, key="select_all_essential"):
+                    for category in category_list:
+                        st.session_state.active_categories_essential[category] = True
+                    st.rerun()
+            
+            with col2:
+                if st.button("Deselect All", use_container_width=True, key="deselect_all_essential"):
+                    for category in category_list:
+                        st.session_state.active_categories_essential[category] = False
+                    st.rerun()
+        
+        # Crear y mostrar el grafo
+        fig, G_filtrado = crear_grafo_plotly(
+            G_actual, 
+            farmaco_principal, 
+            st.session_state.active_categories_essential
+        )
+        
+        if fig:
+            st.plotly_chart(fig, use_container_width=True, 
+                          config={'displayModeBar': True, 'scrollZoom': True})
+            
+            # Estadísticas
+            st.subheader("Network Statistics")
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Essential Drugs in Network", len(G_filtrado.nodes()))
+            with col2:
+                st.metric("Interactions", len(G_filtrado.edges()))
+            with col3:
+                if farmaco_principal:
+                    in_degree = G_filtrado.in_degree(farmaco_principal)
+                    out_degree = G_filtrado.out_degree(farmaco_principal)
+                    st.metric("Selected Drug Connections", in_degree + out_degree)
+                else:
+                    avg_degree = sum(dict(G_filtrado.degree()).values()) / len(G_filtrado.nodes()) if len(G_filtrado.nodes()) > 0 else 0
+                    st.metric("Average Connections", f"{avg_degree:.1f}")
+            
+            # Mostrar análisis de interacciones
+            mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y)
+            
+            # Lista de fármacos en el grafo
+            with st.expander("View Essential Drugs in Network", expanded=False):
+                drugs_list = sorted(G_filtrado.nodes())
+                for drug in drugs_list:
+                    if drug == farmaco_principal:
+                        st.markdown(f"**{drug}** (Selected drug)")
+                    else:
+                        category = G_filtrado.nodes[drug]['atc_category']
+                        color = G_filtrado.nodes[drug]['color']
+                        st.markdown(
+                            f"<span style='color:{color};'>●</span> {drug} ({category})",
+                            unsafe_allow_html=True
+                        )
 
 def about():
     st.title("About this web page")
-    st.write("This application has been developed to visualize drug-drug interactions using network graphs. It allows user to navigate trhough a large dataset of drugs and their interactions.")
-    st.write("We showcase essential drugs as defined by the World Healt Organization (WHO) and compare them with the dataset DDI, to identify which essential drugs have kwon interactions.")
+    st.write("This application has been developed to visualize drug-drug interactions using network graphs. It allows user to navigate through a large dataset of drugs and their interactions.")
+    st.write("We showcase essential drugs as defined by the World Health Organization (WHO) and compare them with the dataset DDI, to identify which essential drugs have known interactions.")
     st.markdown(
     "The DDI dataset was obtained from <a href='https://tdcommons.ai/'>Therapeutic Data Commons</a>",
     unsafe_allow_html=True
@@ -1020,8 +1254,6 @@ def about():
     )
 
     st.markdown("This web-page has been developed by Adolfo Guzmán Arenas, Jorge Luis Chavez Perez, Gilberto Lorenzo Martínez Luna and Edgardo Alberto Marin Colli")
-
-
 
     st.markdown("""
     <style>
@@ -1073,17 +1305,11 @@ def about():
         </div>
         """, unsafe_allow_html=True)
 
-
-
-
-
-
 def manual():
-    
     st.title("Users Manual")
     st.markdown("This web application is designed to facilitate the visualization of drug–drug interactions.")
 
-    manual_tabs = st.tabs(["Manual of network interactions visualization", "Manual of Essentials","About Y Code"])
+    manual_tabs = st.tabs(["Manual of network interactions visualization", "Manual of Essentials", "About Y Code"])
     
     with manual_tabs[0]:
         st.write("The main page initially displays the Network Interaction Visualization tab, which shows the number of drugs in the dataset and the total number of interactions between them. Additionally, a color code is used to indicate which color corresponds to each therapeutic subgroup by ATC code of the drugs, and is showed in **Drugs by ATC Category**")
@@ -1100,7 +1326,7 @@ def manual():
         st.image("images/4f3.png")
         st.write("You can also select more than one ATC therapeutic subgroup to visualize their interaction graph.")
         st.image("images/5f.png")
-        st.write("Now, if you want to focus on a specific drug, you can search for it using the search bar and select it.As in the case where no drug is selected, the therapeutic subgroup checkboxes are initially unchecked.")
+        st.write("Now, if you want to focus on a specific drug, you can search for it using the search bar and select it. As in the case where no drug is selected, the therapeutic subgroup checkboxes are initially unchecked.")
         st.image("images/6f.png")
         st.write("Select the therapeutic subgroups you want to analyze to see their interactions with the selected primary drug (in this case, verteporfin), as well as any interactions among these drugs. Select all checkboxes to visualize all interactions.")
         st.image("images/7f.png")
@@ -1114,33 +1340,19 @@ def manual():
 
     with manual_tabs[1]:
         st.write("In this section, you can choose a country to see which of its essential drugs are included in the DDI dataset. The total number of essential drugs is shown first. For example if you choose Mexico, you can see that Mexico has 706 essentials drugs according to the WHO")
-        st.write("We Know as essential medicines are those that effectively and safely adress the priority health care needs of the population. These medicines are selected based on their relevance to public health and the available evidence regarding their benefits and potential harms, as well as taking into account cost, affordability, and other relevant factors.")
+        st.write("We know as essential medicines are those that effectively and safely address the priority health care needs of the population. These medicines are selected based on their relevance to public health and the available evidence regarding their benefits and potential harms, as well as taking into account cost, affordability, and other relevant factors.")
         st.image("images/11f.png")
         st.write("The essential drugs of the selected country (in this case, Mexico) that are included in the DDI dataset are shown in the following table.")
         st.image("images/12f.png")
 
-
-
-
-
-
-
-
-
-
-
 def main():
-
     tab1, tab2, tab3, tab4, tab5 = st.tabs([
-
         "Network interactions Visualization", 
         "Essentials",
         "Y dataset",
         "About",
         "User Manual"
     ])
-    
-    
     
     with tab1:
         pestaña_visualizacion()
