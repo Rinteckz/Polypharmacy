@@ -1075,40 +1075,33 @@ def about():
 
 
 
-
 def manual():
 
     st.title("📘 Users Manual")
 
     st.markdown("""
     Welcome to the user manual of the **Drug–Drug Interaction Visualization Tool**.  
-    Use the index on the left to navigate between sections.
+    Use the navigation tabs below to explore each section.
     """)
 
-    # ---------- SIDEBAR INDEX ----------
-    st.sidebar.title("📖 Index")
+    # ---------- NAVEGACIÓN INTERNA CON TABS ----------
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "Introduction",
+        "Network Visualization",
+        "Essentials Section",
+        "About Y Code"
+    ])
 
-    section = st.sidebar.radio(
-        "Go to:",
-        [
-            "Introduction",
-            "Network Visualization",
-            "Essentials Section",
-            "About Y Code"
-        ]
-    )
-
-    # ---------- SECTIONS ----------
-    if section == "Introduction":
+    with tab1:
         show_intro()
 
-    elif section == "Network Visualization":
+    with tab2:
         show_network_manual()
 
-    elif section == "Essentials Section":
+    with tab3:
         show_essentials_manual()
 
-    elif section == "About Y Code":
+    with tab4:
         show_about_y_code()
 
 
@@ -1130,7 +1123,7 @@ def show_intro():
     - Visualize complex networks in a simple way  
     """)
 
-    st.info("Use the sidebar index to explore each section of the manual.")
+    st.info("Use the tabs at the top of this page to navigate through the manual.")
 
 
 
