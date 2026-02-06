@@ -1074,155 +1074,552 @@ def about():
         """, unsafe_allow_html=True)
 
 
-import streamlit as st
-
-
 def manual():
-
     st.title("📘 Users Manual")
+    
+    # Usar session_state para controlar el tab activo
+    if 'manual_tab' not in st.session_state:
+        st.session_state.manual_tab = "Introduction"
+    
+    # ÍNDICE CON ENLACES DIRECTOS QUE CAMBIAN EL TAB
+    st.markdown("""
+    ## 📑 Quick Navigation Index
+    
+    Click on any section below to jump directly to it:
+    
+    **🔹 Introduction**
+    - [Overview](#overview)
+    
+    **🔹 Network Visualization**
+    - [Main Page](#main-page) | [Sidebar Controls](#sidebar-controls)
+    - [ATC Filtering](#atc-filtering) | [Drug Search](#drug-search)
+    - [Graph Interaction](#graph-interaction) | [Statistics & Tables](#statistics-tables)
+    
+    **🔹 Essential Drugs**
+    - [Country Selection](#country-selection) | [Essential Medicines](#essential-medicines)
+    - [Results View](#results-view)
+    
+    **🔹 About Y Code**
+    - [Y Code System](#y-code-system)
+    
+    ---
+    """)
+    
+    # Crear columnas para los botones de navegación rápida
+    st.subheader("Quick Access")
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        if st.button("📖 Introduction", use_container_width=True):
+            st.session_state.manual_tab = "Introduction"
+            st.rerun()
+    
+    with col2:
+        if st.button("🌐 Network", use_container_width=True):
+            st.session_state.manual_tab = "Network Visualization"
+            st.rerun()
+    
+    with col3:
+        if st.button("💊 Essentials", use_container_width=True):
+            st.session_state.manual_tab = "Essentials Section"
+            st.rerun()
+    
+    with col4:
+        if st.button("🔢 Y Code", use_container_width=True):
+            st.session_state.manual_tab = "About Y Code"
+            st.rerun()
 
     st.markdown("""
-    Welcome to the user manual of the **Drug–Drug Interaction Visualization Tool**.
+    Welcome to the user manual of the **Drug–Drug Interaction Visualization Tool**.  
+    Use the navigation tabs below to explore each section.
     """)
 
-    # ---------- ÍNDICE INTERNO ----------
-    st.markdown("## 📖 Table of Contents")
+    # ---------- NAVEGACIÓN INTERNA CON TABS ----------
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "Introduction",
+        "Network Visualization",
+        "Essentials Section",
+        "About Y Code"
+    ])
 
-    section = st.selectbox(
-        "Select a section to navigate:",
-        [
-            "Introduction",
-            "Network Visualization",
-            "Essentials Section",
-            "About Y Code"
-        ]
-    )
-
-    st.markdown("---")
-
-    # ---------- NAVEGACIÓN SEGÚN ÍNDICE ----------
-    if section == "Introduction":
+    # Usar el índice del tab basado en session_state
+    tabs_dict = {
+        "Introduction": 0,
+        "Network Visualization": 1,
+        "Essentials Section": 2,
+        "About Y Code": 3
+    }
+    
+    # Crear todos los tabs pero marcar el activo
+    with tab1:
         show_intro()
-
-    elif section == "Network Visualization":
+    
+    with tab2:
         show_network_manual()
-
-    elif section == "Essentials Section":
+    
+    with tab3:
         show_essentials_manual()
-
-    elif section == "About Y Code":
+    
+    with tab4:
         show_about_y_code()
-
-
+    
+    # Script JavaScript para forzar el tab activo
+    st.markdown(f"""
+    <script>
+    // Esperar a que cargue la página
+    window.onload = function() {{
+        // Encontrar todos los tabs
+        const tabs = window.parent.document.querySelectorAll('[data-testid="stTab"]');
+        // Activar el tab correspondiente
+        if (tabs.length > {tabs_dict[st.session_state.manual_tab]}) {{
+            tabs[{tabs_dict[st.session_state.manual_tab]}].click();
+        }}
+    }};
+    </script>
+    """, unsafe_allow_html=True)
 
 # ----------------- SECCIÓN 1 -----------------
 def show_intro():
-
-    st.header("🔹 Introduction")
-
+    st.header("🔹 Introduction", anchor="overview")
+    
+    # Botón para volver al índice
+    if st.button("⬆️ Back to Index", key="back_intro"):
+        st.session_state.manual_tab = "Introduction"
+        st.rerun()
+    
     st.markdown("""
+    <a id="overview"></a>
+    ## Overview
+
     This web application is designed to facilitate the visualization of  
     **drug–drug interactions (DDI)** in an intuitive and interactive way.
 
-    Through this tool you can:
+    ### Key Features:
 
-    - Explore interactions between drugs  
-    - Filter by therapeutic categories  
-    - Analyze essential medicines by country  
-    - Visualize complex networks in a simple way  
-    """)
+    - **Explore interactions** between drugs  
+    - **Filter by therapeutic categories** using ATC codes  
+    - **Analyze essential medicines** by country  
+    - **Visualize complex networks** in a simple way  
+    - **Search and focus** on specific drugs  
+    """, unsafe_allow_html=True)
 
-    st.info("Use the table of contents above to navigate between sections.")
-
-
+    st.info("💡 **Tip:** Use the tabs at the top or the quick access buttons to navigate through the manual.")
 
 # ----------------- SECCIÓN 2 -----------------
 def show_network_manual():
-
     st.header("🔹 Network Interaction Visualization")
+    
+    # Botón para volver al índice
+    col1, col2 = st.columns([1, 4])
+    with col1:
+        if st.button("⬆️ Back to Index", key="back_network"):
+            st.session_state.manual_tab = "Network Visualization"
+            st.rerun()
+    
+    # Índice interno con botones para subsecciones
+    st.markdown("""
+    ### 📋 Quick Navigation within this Section
+    
+    Jump to specific topics:
+    """)
+    
+    cols = st.columns(3)
+    with cols[0]:
+        if st.button("Main Page", key="btn_main_page", use_container_width=True):
+            st.markdown('<script>window.location.hash = "#main-page";</script>', unsafe_allow_html=True)
+    with cols[1]:
+        if st.button("Sidebar", key="btn_sidebar", use_container_width=True):
+            st.markdown('<script>window.location.hash = "#sidebar-controls";</script>', unsafe_allow_html=True)
+    with cols[2]:
+        if st.button("ATC Filtering", key="btn_atc", use_container_width=True):
+            st.markdown('<script>window.location.hash = "#atc-filtering";</script>', unsafe_allow_html=True)
+    
+    cols2 = st.columns(3)
+    with cols2[0]:
+        if st.button("Drug Search", key="btn_search", use_container_width=True):
+            st.markdown('<script>window.location.hash = "#drug-search";</script>', unsafe_allow_html=True)
+    with cols2[1]:
+        if st.button("Graph Controls", key="btn_graph", use_container_width=True):
+            st.markdown('<script>window.location.hash = "#graph-interaction";</script>', unsafe_allow_html=True)
+    with cols2[2]:
+        if st.button("Statistics", key="btn_stats", use_container_width=True):
+            st.markdown('<script>window.location.hash = "#statistics-tables";</script>', unsafe_allow_html=True)
+    
+    st.markdown("---")
 
     st.markdown("""
-    ### Overview
+    <a id="main-page"></a>
+    ### 🖥️ Main Page Overview
 
     The main page initially displays the **Network Interaction Visualization tab**,  
     which shows:
 
-    - The number of drugs in the dataset  
-    - The total number of interactions  
-    - A color code according to ATC therapeutic categories  
-    """)
+    ✅ **The number of drugs** in the dataset  
+    ✅ **The total number of interactions**  
+    ✅ **A color code** according to ATC therapeutic categories  
+    ✅ **Statistics** about drugs by ATC category  
+    """, unsafe_allow_html=True)
 
     st.image("images/image.png", caption="Main visualization page")
 
-    with st.expander("How to start"):
+    st.markdown("""
+    <a id="sidebar-controls"></a>
+    ### ⚙️ Opening the Sidebar Controls
+
+    **To begin interacting with the tool:**
+
+    1. **Click the arrow** on the left side of the screen  
+    2. **The control sidebar** will appear  
+    3. **All filters and search options** will be available  
+    4. **Select categories** to filter the visualization  
+    """, unsafe_allow_html=True)
+
+    st.image("images/2f.png", caption="Sidebar controls")
+
+    with st.expander("🚀 Initial State of the Visualization", expanded=False):
+        st.markdown('<a id="initial-state"></a>', unsafe_allow_html=True)
         st.write("""
-        Click the arrow on the left to open the sidebar  
-        where filters and search options are located.
+        **Initially:**
+        - No specific drug is selected as the focus  
+        - Drugs are not filtered by ATC code  
+        - All checkboxes are unchecked  
+        - You see only basic statistics  
         """)
-        st.image("images/2f.png")
+        st.image("images/3f.png", caption="Initial view without filters")
 
-    with st.expander("Filtering by ATC Therapeutic Subgroup"):
+    st.markdown("""
+    <a id="atc-filtering"></a>
+    ### 🎯 Filtering by ATC Therapeutic Subgroup
+    """, unsafe_allow_html=True)
+    
+    with st.expander("📊 How to Filter by ATC Categories", expanded=True):
         st.write("""
-        You can select checkboxes to visualize drug interactions  
-        according to their ATC classification.
+        **Step-by-step filtering:**
+        
+        1. **Open the sidebar** (click the arrow)  
+        2. **Find the ATC categories** section  
+        3. **Check the boxes** for categories you want to see  
+        4. **The graph updates automatically**  
+        5. **Each category has a color code** for easy identification  
         """)
-        st.image("images/4f.png")
-
-    with st.expander("Interacting with the Graph"):
+        st.image("images/4f.png", caption="Filtering by ATC categories")
+        
         st.write("""
-        - Hover over nodes to see details  
-        - Zoom in and out  
-        - Save the image  
-        - Reset the view  
+        **Pro tip:** Start with one category to avoid visual clutter,  
+        then add more as needed.
         """)
-        st.image("images/8f.png")
 
+    with st.expander("📈 Graph Statistics", expanded=False):
+        st.markdown('<a id="statistics"></a>', unsafe_allow_html=True)
+        st.write("""
+        **Below the graph you'll find:**
+        
+        - **Displayed Drugs**: Number of drugs currently shown  
+        - **Displayed Interactions**: Number of visible interactions  
+        - **Y Value Distribution**: Pie chart of interaction types  
+        - **Interaction Analysis**: Detailed table of all interactions  
+        """)
+        st.image("images/4f2.png", caption="Statistics section")
 
+    with st.expander("📋 Interaction Tables", expanded=False):
+        st.markdown('<a id="tables"></a>', unsafe_allow_html=True)
+        st.write("""
+        **Scrolling further down reveals:**
+        
+        - **All Interactions**: Complete table of shown interactions  
+        - **Drug List**: All drugs in the current view  
+        - **Expandable sections**: Click to show/hide details  
+        """)
+        st.image("images/4f3.png", caption="Interaction tables")
+
+    with st.expander("🔗 Selecting Multiple Categories", expanded=False):
+        st.write("""
+        **You can combine multiple ATC subgroups:**
+        
+        - Check multiple boxes at once  
+        - See interactions between different therapeutic groups  
+        - Identify cross-category interactions  
+        """)
+        st.image("images/5f.png", caption="Multiple categories selected")
+
+    st.markdown("""
+    <a id="drug-search"></a>
+    ### 🔍 Focusing on a Specific Drug
+    """, unsafe_allow_html=True)
+    
+    with st.expander("🎯 Searching for a Drug", expanded=True):
+        st.write("""
+        **To analyze a specific drug:**
+        
+        1. **Use the search bar** in the sidebar  
+        2. **Type the drug name** or browse the list  
+        3. **Select the desired drug** from dropdown  
+        4. **The graph centers** on your selected drug  
+        5. **Choose ATC categories** to see related drugs  
+        """)
+        st.image("images/6f.png", caption="Drug search interface")
+
+    with st.expander("🎨 Visualizing Interactions of a Selected Drug", expanded=False):
+        st.write("""
+        **After selecting a drug:**
+        
+        - **Central node**: Your selected drug  
+        - **Incoming arrows**: Drugs that affect your drug  
+        - **Outgoing arrows**: Drugs affected by your drug  
+        - **Color coding**: Different ATC categories  
+        - **Updated statistics**: Specific to this drug  
+        """)
+        st.image("images/7f.png", caption="Drug-centered view")
+
+    st.markdown("""
+    <a id="graph-interaction"></a>
+    ### 🎮 Interacting with the Graph
+    """, unsafe_allow_html=True)
+    
+    with st.expander("🖱️ Graph Navigation Features", expanded=True):
+        st.write("""
+        **Direct graph manipulation:**
+        
+        - **Hover over nodes**: See drug details (name, ATC code, category)  
+        - **Zoom**: Use mouse wheel or toolbar buttons  
+        - **Pan**: Click and drag to move around  
+        - **Save image**: Download button in toolbar  
+        - **Reset view**: Home button in toolbar  
+        - **Fullscreen**: Maximize button for detailed view  
+        """)
+        st.image("images/8f.png", caption="Graph interaction toolbar")
+        
+        st.write("""
+        **Toolbar icons (top-right corner):**
+        
+        1. **📷 Download plot as PNG**  
+        2. **🔍 Zoom in/out**  
+        3. **🏠 Reset view**  
+        4. **📐 Show grid** (toggle)  
+        5. **📏 Show rulers** (toggle)  
+        """)
+
+    st.markdown("""
+    <a id="statistics-tables"></a>
+    ### 📊 Detailed Analysis Sections
+    """, unsafe_allow_html=True)
+    
+    with st.expander("🔬 Detailed Interaction Tables", expanded=True):
+        st.write("""
+        **Comprehensive analysis available:**
+        
+        - **All interactions**: Complete list in current view  
+        - **Drug-specific interactions**: Filtered by selected drug  
+        - **Y code explanations**: Meaning of each interaction type  
+        - **Direction analysis**: Which drug affects which  
+        - **Severity levels**: From mild to contraindicated  
+        """)
+        st.image("images/10f.png", caption="Detailed interaction analysis")
+
+    # Navegación rápida al final
+    st.markdown("---")
+    st.markdown("""
+    ### 🔄 Quick Navigation
+    """)
+    
+    nav_cols = st.columns(4)
+    with nav_cols[0]:
+        if st.button("⬅️ Previous: Intro", key="prev_intro"):
+            st.session_state.manual_tab = "Introduction"
+            st.rerun()
+    with nav_cols[3]:
+        if st.button("Next: Essentials ➡️", key="next_essentials"):
+            st.session_state.manual_tab = "Essentials Section"
+            st.rerun()
 
 # ----------------- SECCIÓN 3 -----------------
 def show_essentials_manual():
-
     st.header("🔹 Essential Drugs Section")
+    
+    # Botón para volver al índice
+    col1, col2 = st.columns([1, 4])
+    with col1:
+        if st.button("⬆️ Back to Index", key="back_essentials"):
+            st.session_state.manual_tab = "Essentials Section"
+            st.rerun()
+    
+    # Índice interno
+    st.markdown("""
+    ### 📋 Quick Navigation within this Section
+    
+    Jump to:
+    """)
+    
+    cols = st.columns(3)
+    with cols[0]:
+        if st.button("Country Selection", key="btn_country", use_container_width=True):
+            st.markdown('<script>window.location.hash = "#country-selection";</script>', unsafe_allow_html=True)
+    with cols[1]:
+        if st.button("Essential Meds", key="btn_meds", use_container_width=True):
+            st.markdown('<script>window.location.hash = "#essential-medicines";</script>', unsafe_allow_html=True)
+    with cols[2]:
+        if st.button("View Results", key="btn_results", use_container_width=True):
+            st.markdown('<script>window.location.hash = "#results-view";</script>', unsafe_allow_html=True)
+    
+    st.markdown("---")
 
     st.markdown("""
-    In this section, you can choose a country to see  
+    <a id="country-selection"></a>
+    ### 🌍 Selecting a Country
+
+    In this section, you can choose a country to analyze  
     which of its **essential drugs** are included in the DDI dataset.
-    """)
+    
+    **How to select:**
+    
+    1. **Go to the Essentials tab** in the main navigation  
+    2. **Choose "Interaction Network"** subtab  
+    3. **Select your country** from the dropdown menu  
+    4. **View the network** of essential drug interactions  
+    """, unsafe_allow_html=True)
 
-    st.image("images/11f.png", caption="Selecting a country")
+    st.image("images/11f.png", caption="Country selection interface")
 
-    with st.expander("What are Essential Medicines?"):
+    st.markdown("""
+    <a id="essential-medicines"></a>
+    ### 💊 What are Essential Medicines?
+    """, unsafe_allow_html=True)
+    
+    with st.expander("📋 Definition and Selection Criteria", expanded=True):
         st.write("""
-        Essential medicines are those that effectively and safely  
+        **Essential medicines** are those that effectively and safely  
         address the priority health care needs of the population.
+
+        **They are selected based on:**
+
+        - **Public health relevance**: Most common conditions  
+        - **Scientific evidence**: Proven efficacy and safety  
+        - **Cost-effectiveness**: Affordable for health systems  
+        - **Accessibility**: Available when needed  
+        - **Quality**: Meeting international standards  
+        
+        **Source**: World Health Organization (WHO) Essential Medicines List
         """)
 
-    st.image("images/12f.png")
+    st.markdown("""
+    <a id="results-view"></a>
+    ### 📊 Viewing Results
+    """, unsafe_allow_html=True)
+    
+    st.write("""
+    **After selecting a country, the system displays:**
+    
+    - **Essential drugs list**: All essential drugs for that country  
+    - **ATC distribution**: Breakdown by therapeutic category  
+    - **Interaction network**: How essential drugs interact  
+    - **Statistics**: Counts and percentages  
+    - **Detailed tables**: Complete interaction data  
+    """)
 
+    st.image("images/12f.png", caption="Results view for selected country")
+    
+    st.write("""
+    **Key features of the results:**
+    
+    1. **Filter by ATC category**: Just like main network view  
+    2. **Focus on specific drugs**: Select any essential drug  
+    3. **See interactions**: Between essential drugs only  
+    4. **Compare countries**: Select different countries to compare  
+    """)
 
+    # Navegación rápida al final
+    st.markdown("---")
+    st.markdown("""
+    ### 🔄 Quick Navigation
+    """)
+    
+    nav_cols = st.columns(4)
+    with nav_cols[0]:
+        if st.button("⬅️ Previous: Network", key="prev_network"):
+            st.session_state.manual_tab = "Network Visualization"
+            st.rerun()
+    with nav_cols[3]:
+        if st.button("Next: Y Code ➡️", key="next_ycode"):
+            st.session_state.manual_tab = "About Y Code"
+            st.rerun()
 
 # ----------------- SECCIÓN 4 -----------------
 def show_about_y_code():
-
     st.header("🔹 About Y Code")
-
+    
+    # Botón para volver al índice
+    col1, col2 = st.columns([1, 4])
+    with col1:
+        if st.button("⬆️ Back to Index", key="back_ycode"):
+            st.session_state.manual_tab = "About Y Code"
+            st.rerun()
+    
+    # Índice interno
     st.markdown("""
-    The **Y code system** represents the type of interaction  
-    between two drugs and helps classify clinical relevance.
+    ### 📋 Quick Navigation
+    
+    Jump to: [Y Code System](#y-code-system)
+    
+    ---
     """)
 
-    st.info("For more details, refer to the official dataset documentation.")
+    st.markdown("""
+    <a id="y-code-system"></a>
+    ### 🔢 Understanding Y Codes
 
+    The **Y code system** represents the **type and severity** of interactions  
+    between two drugs in the dataset.
 
+    **What Y codes classify:**
 
+    - **Interaction mechanism**: How drugs affect each other  
+    - **Direction of effect**: Which drug influences which  
+    - **Clinical relevance**: Importance for patient safety  
+    - **Severity level**: From no interaction to contraindicated  
+    """, unsafe_allow_html=True)
 
+    st.warning("""
+    ⚠️ **Important**: Understanding Y codes is essential to correctly interpret  
+    the interaction tables and graphs for clinical decision-making.
+    """)
 
+    # Tabla de códigos Y (ejemplo)
+    st.subheader("📊 Y Code Reference Table")
+    
+    y_codes_data = {
+        "Y Value": [0, 1, 2, 3, 4],
+        "Severity Level": ["None", "Mild", "Moderate", "Severe", "Contraindicated"],
+        "Description": [
+            "No significant interaction expected",
+            "Minor effects, monitor if needed",
+            "Moderate effects, consider alternatives",
+            "Serious effects, avoid combination",
+            "Do not combine under any circumstances"
+        ],
+        "Color Code": ["🟢", "🟡", "🟠", "🔴", "⛔"]
+    }
+    
+    y_df = pd.DataFrame(y_codes_data)
+    st.table(y_df)
 
+    st.info("""
+    💡 **Note**: For full technical details about Y codes and their specific meanings,  
+    please refer to the official dataset documentation in the "Y dataset" tab.
+    
+    You can also see real Y code data in the **Y dataset tab** of the application.
+    """)
 
-
-
-
-
+    # Navegación rápida al final
+    st.markdown("---")
+    st.markdown("""
+    ### 🔄 Quick Navigation
+    """)
+    
+    nav_cols = st.columns(4)
+    with nav_cols[0]:
+        if st.button("⬅️ Previous: Essentials", key="prev_essentials"):
+            st.session_state.manual_tab = "Essentials Section"
+            st.rerun()
 
 
 
