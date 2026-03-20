@@ -98,13 +98,12 @@ def get_atc_letter_from_category(category_name):
 
 @st.cache_data
 def crear_grafo_completo(df):
-    """Crear grafo completo con todos los fármacos"""
-    G = nx.DiGraph()
+    G = nx.MultiDiGraph()  # <-- cambio aquí
     
     for _, row in df.iterrows():
         drug1 = row['Common_name_x']
         drug2 = row['Common_name_y']
-        interaction_type = row['Y'] 
+        interaction_type = row['Y']
         
         atc1 = row['atc_code_x'] if pd.notna(row['atc_code_x']) else "No ATC"
         num_atc1 = row['num_atc_x']
@@ -116,27 +115,17 @@ def crear_grafo_completo(df):
         
         if not G.has_node(drug1):
             tooltip_info = f"<b>Drug:</b> {drug1}<br><b>ATC Code:</b> {atc1}<br><b>ATC Category:</b> {category1}"
-            G.add_node(drug1, 
-                      atc_code=atc1,
-                      atc_category=category1,
-                      color=color1,
-                      num_atc=num_atc1,
-                      tooltip=tooltip_info)
+            G.add_node(drug1, atc_code=atc1, atc_category=category1,
+                      color=color1, num_atc=num_atc1, tooltip=tooltip_info)
         
         if not G.has_node(drug2):
             tooltip_info = f"<b>Drug:</b> {drug2}<br><b>ATC Code:</b> {atc2}<br><b>ATC Category:</b> {category2}"
-            G.add_node(drug2, 
-                      atc_code=atc2,
-                      atc_category=category2,
-                      color=color2,
-                      num_atc=num_atc2,
-                      tooltip=tooltip_info)
+            G.add_node(drug2, atc_code=atc2, atc_category=category2,
+                      color=color2, num_atc=num_atc2, tooltip=tooltip_info)
         
-        if not G.has_edge(drug1, drug2):
-            edge_tooltip = f"<b>From:</b> {drug1} → <b>To:</b> {drug2}"
-            G.add_edge(drug1, drug2, 
-                      interaction_type=interaction_type,
-                      tooltip=edge_tooltip)
+        # Ya NO hay if not G.has_edge(...) — siempre agregamos
+        edge_tooltip = f"<b>From:</b> {drug1} → <b>To:</b> {drug2}<br><b>Interaction:</b> {interaction_type}"
+        G.add_edge(drug1, drug2, interaction_type=interaction_type, tooltip=edge_tooltip)
     
     return G
 
@@ -211,16 +200,16 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
         return fig, None
     
     edges_to_keep = []
-    for u, v in G.edges():
+    for u, v,key in G.edges(keys=True):
         if u in nodes_to_keep and v in nodes_to_keep:
-            edges_to_keep.append((u, v))
+            edges_to_keep.append((u, v,key))
     
-    G_filtered = nx.DiGraph()
+    G_filtered = nx.MultiDiGraph()
     for node in nodes_to_keep:
         G_filtered.add_node(node, **G.nodes[node])
     
-    for u, v in edges_to_keep:
-        G_filtered.add_edge(u, v, **G[u][v])
+    for u, v,key in edges_to_keep:
+        G_filtered.add_edge(u, v, **G[u][v][key])
     
     if farmaco_principal and farmaco_principal in G_filtered.nodes():
         pos = {}
@@ -269,7 +258,7 @@ def crear_grafo_plotly(G, farmaco_principal=None, active_categories=None):
     
     edge_x, edge_y, edge_texts = [], [], []
     
-    for u, v, data in G_filtered.edges(data=True):
+    for u, v,key, data in G_filtered.edges(keys=True,data=True):
         x0, y0 = pos[u]
         x1, y1 = pos[v]
         
