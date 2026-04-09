@@ -364,7 +364,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
     with col1:
         for y_val, count in y_counts.items():
             percentage = (count / len(interacciones_df)) * 100
-            st.write(f"**Y = {y_val}:** {count} interactions ({percentage:.1f}%)")
+            st.write(f"**Y = {y_val}:** {count} interactions ({percentage:.3f}%)")
     
     with col2:
         if len(y_counts) > 0:
