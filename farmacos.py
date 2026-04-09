@@ -987,6 +987,29 @@ def pestaña_esenciales():
                 title="Distribution of type of interaction",
                 color_discrete_sequence=px.colors.sequential.Reds
             )
+            fig_pie.update_traces(
+                textposition='inside',
+                texttemplate='%{percent:.1%}',
+                # Solo muestra etiqueta si el slice supera el 3%
+                text=[
+                    f"{p:.1%}" if p > 0.03 else ""
+                    for p in (y_counts.values / y_counts.values.sum())
+                ],
+                textinfo='text',
+                hovertemplate='<b>%{label}</b><br>Interacciones: %{value}<br>Porcentaje: %{percent}<extra></extra>'
+            )
+            
+            fig_pie.update_layout(
+                legend=dict(
+                    orientation="v",
+                    yanchor="middle",
+                    y=0.5,
+                    xanchor="left",
+                    x=1.05,
+                    font=dict(size=11)
+                ),
+                margin=dict(t=60, b=20, l=20, r=150)  
+            )
             st.plotly_chart(fig_pie, use_container_width=True)
         
         # Top fármacos más interactivos
