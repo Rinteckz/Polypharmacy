@@ -423,8 +423,8 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
             display_df,
             use_container_width=True,
             column_config={
-                "From": st.column_config.TextColumn("From (Drug 1)", width="medium"),
-                "To": st.column_config.TextColumn("To (Drug 2)", width="medium"),
+                "From": st.column_config.TextColumn("From (Drug A)", width="medium"),
+                "To": st.column_config.TextColumn("To (Drug B)", width="medium"),
                 "Effect Description": st.column_config.TextColumn("Effect Description", width="large"),
                 "Direction": st.column_config.TextColumn("Direction", width="medium")
             },
@@ -458,7 +458,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
                 })
         
         if outgoing:
-            st.write(f"**{farmaco_principal} to drug 2 ({len(outgoing)}):**")
+            st.write(f"**{farmaco_principal} to drug B ({len(outgoing)}):**")
             outgoing_df = pd.DataFrame(outgoing)
             
             # Mostrar solo Target y Effect description
@@ -477,7 +477,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
             st.write("No outgoing interactions.")
         
         if incoming:
-            st.write(f"**Drug 1 to {farmaco_principal} ({len(incoming)}):**")
+            st.write(f"**Drug A to {farmaco_principal} ({len(incoming)}):**")
             incoming_df = pd.DataFrame(incoming)
             
             # Mostrar solo Source y Effect description
@@ -872,7 +872,7 @@ def pestaña_esenciales():
     # Mostrar estadísticas detalladas
     st.subheader("Detailed Statistics")
     
-    col1 = st.columns(4)
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.metric("Unique Essential Drugs", len(df_farmacos_esenciales))
    # with col2:
@@ -950,23 +950,47 @@ def pestaña_esenciales():
     ]
     
     if not essential_interactions.empty:
-        st.write(f"**Found {len(essential_interactions)} interactions involving essential drugs in the DDI dataset**")
+        st.write(f"**Found {len(essential_interactions)} interactions involving essential drugs**")
         
         with st.expander("View All Interactions", expanded=False):
             st.dataframe(
                 essential_interactions[['Common_name_x', 'Common_name_y', 'Y', 'atc_code_x', 'atc_code_y']].rename(
                     columns={
-                        'Common_name_x': 'From (Drug1)',
-                        'Common_name_y': 'To (Drug2)',
+                        'Common_name_x': 'Drug A',
+                        'Common_name_y': 'Drug B',
                         'Y': 'Y Value',
-                        'atc_code_x': 'ATC Code of Drug1',
-                        'atc_code_y': 'ATC Code of Drug2'
+                        'atc_code_x': 'ATC Code A',
+                        'atc_code_y': 'ATC Code B'
                     }
                 ),
                 use_container_width=True,
                 hide_index=True
             )
         
+        st.write("**Severity Analysis (Y Values):**")
+        
+        y_counts = essential_interactions['Y'].value_counts().sort_index()
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            for y_val, count in y_counts.items():
+                percentage = (count / len(essential_interactions)) * 100
+                severity = {
+                    0: "None", 1: "Mild", 2: "Moderate", 
+                    3: "Severe", 4: "Contraindicated"
+                }.get(y_val, "Unknown")
+                
+                st.write(f"**Y={y_val} ({severity}):** {count} ({percentage:.1f}%)")
+        
+        with col2:
+            fig_pie = px.pie(
+                values=y_counts.values,
+                names=[f"Y={k}" for k in y_counts.index],
+                title="Severity Distribution",
+                color_discrete_sequence=px.colors.sequential.Reds
+            )
+            st.plotly_chart(fig_pie, use_container_width=True)
         
         # Top fármacos más interactivos
         st.write("**Most Interactive Essential Drugs:**")
