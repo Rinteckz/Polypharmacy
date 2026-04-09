@@ -356,7 +356,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
     interacciones_df = pd.DataFrame(interacciones_data)
     
     # Mostrar codigo de efecto (este se busca en el csv que pondré en la mismsa pag)
-    st.write("**Effect by DDI code (Y):**")
+    st.write("**Interactions by DDI code (Y):**")
     y_counts = interacciones_df['Y Value'].value_counts().sort_index()
     
     col1, col2 = st.columns(2)
@@ -370,7 +370,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
             fig_pie = px.pie(
                 values=y_counts.values,
                 names=[f"Y = {k}" for k in y_counts.index],
-                title="Distribution of Y Values",
+                title="Distribution of type of interactions",
                 color_discrete_sequence=px.colors.qualitative.Set3
             )
             
@@ -395,7 +395,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
                     x=1.05,
                     font=dict(size=11)
                 ),
-                margin=dict(t=60, b=20, l=20, r=150)  # espacio extra a la derecha para la leyenda
+                margin=dict(t=60, b=20, l=20, r=150)  
             )
             
             st.plotly_chart(fig_pie, use_container_width=True)
@@ -423,8 +423,8 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
             display_df,
             use_container_width=True,
             column_config={
-                "From": st.column_config.TextColumn("From (Drug A)", width="medium"),
-                "To": st.column_config.TextColumn("To (Drug B)", width="medium"),
+                "From": st.column_config.TextColumn("From (Drug 1)", width="medium"),
+                "To": st.column_config.TextColumn("To (Drug 2)", width="medium"),
                 "Effect Description": st.column_config.TextColumn("Effect Description", width="large"),
                 "Direction": st.column_config.TextColumn("Direction", width="medium")
             },
@@ -477,7 +477,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
             st.write("No outgoing interactions.")
         
         if incoming:
-            st.write(f"**Drug A to {farmaco_principal} ({len(incoming)}):**")
+            st.write(f"**Drug 1 to {farmaco_principal} ({len(incoming)}):**")
             incoming_df = pd.DataFrame(incoming)
             
             # Mostrar solo Source y Effect description
@@ -956,11 +956,11 @@ def pestaña_esenciales():
             st.dataframe(
                 essential_interactions[['Common_name_x', 'Common_name_y', 'Y', 'atc_code_x', 'atc_code_y']].rename(
                     columns={
-                        'Common_name_x': 'Drug A',
-                        'Common_name_y': 'Drug B',
+                        'Common_name_x': 'From Drug 1',
+                        'Common_name_y': 'To Drug 2',
                         'Y': 'Y Value',
-                        'atc_code_x': 'ATC Code A',
-                        'atc_code_y': 'ATC Code B'
+                        'atc_code_x': 'ATC Code of Drug 1',
+                        'atc_code_y': 'ATC Code of Drug2'
                     }
                 ),
                 use_container_width=True,
@@ -976,18 +976,15 @@ def pestaña_esenciales():
         with col1:
             for y_val, count in y_counts.items():
                 percentage = (count / len(essential_interactions)) * 100
-                severity = {
-                    0: "None", 1: "Mild", 2: "Moderate", 
-                    3: "Severe", 4: "Contraindicated"
-                }.get(y_val, "Unknown")
                 
-                st.write(f"**Y={y_val} ({severity}):** {count} ({percentage:.1f}%)")
+                
+                st.write(f"**Effect by DDI code (Y)={y_val}:** {count} interactions({percentage:.3f}%)")
         
         with col2:
             fig_pie = px.pie(
                 values=y_counts.values,
                 names=[f"Y={k}" for k in y_counts.index],
-                title="Severity Distribution",
+                title="Distribution of type of interaction",
                 color_discrete_sequence=px.colors.sequential.Reds
             )
             st.plotly_chart(fig_pie, use_container_width=True)
@@ -1094,7 +1091,6 @@ import streamlit as st
 def manual():
     st.title("Users Manual")
 
-    # ---------- ÍNDICE FUNCIONAL ----------
     st.markdown("""
     ## Quick Navigation Index
     
