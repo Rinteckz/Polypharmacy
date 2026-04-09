@@ -25,7 +25,7 @@ meeaning_y=load_data2()
 @st.cache_data
 def load_essential_drugs():
     
-    essentials_df = pd.read_csv(r"farmacos_esenciales.csv")
+    essentials_df = pd.read_csv(r"farmacos_esenciales.csv",index_col=0)
     return essentials_df
 # DICCIONARIO CON NOMBRES COMPLETOS DE ATC
 ATC_CATEGORIES = {
@@ -458,7 +458,7 @@ def mostrar_analisis_interacciones(G_filtrado, farmaco_principal, meeaning_y):
                 })
         
         if outgoing:
-            st.write(f"**{farmaco_principal} to drug B ({len(outgoing)}):**")
+            st.write(f"**{farmaco_principal} to drug 2 ({len(outgoing)}):**")
             outgoing_df = pd.DataFrame(outgoing)
             
             # Mostrar solo Target y Effect description
@@ -967,7 +967,7 @@ def pestaña_esenciales():
                 hide_index=True
             )
         
-        st.write("**Severity Analysis (Y Values):**")
+        st.write("**Interactions by DDI code (Y):**")
         
         y_counts = essential_interactions['Y'].value_counts().sort_index()
         
@@ -978,7 +978,7 @@ def pestaña_esenciales():
                 percentage = (count / len(essential_interactions)) * 100
                 
                 
-                st.write(f"**Effect by DDI code (Y)={y_val}:** {count} interactions({percentage:.3f}%)")
+                st.write(f"**Y={y_val}:** {count} interactions ({percentage:.3f}%)")
         
         with col2:
             fig_pie = px.pie(
